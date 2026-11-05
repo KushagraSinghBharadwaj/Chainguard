@@ -18,3 +18,20 @@ def auth_headers():
         conn.execute(text("DELETE FROM client_tokens WHERE client_id = CAST(:c AS uuid)"), params)
         conn.execute(text("DELETE FROM clients WHERE id = CAST(:c AS uuid)"), params)
     register_limiter.reset()
+
+
+def pytest_addoption(parser):
+    parser.addoption("--live", action="store_true", default=False, help="run live tests against real providers")
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "live: test calls a real external provider; run with --live")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--live"):
+        return
+    skip = pytest.mark.skip(reason="live test: run with --live")
+    for item in items:
+        if "live" in item.keywords:
+            item.add_marker(skip)
