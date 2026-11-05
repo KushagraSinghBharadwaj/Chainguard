@@ -10,6 +10,7 @@ import httpx
 from app.core.addresses import normalize_address
 from app.core.config import get_settings
 from app.providers.base import CallOutcome, ProviderResult, ResultStatus
+from app.providers.cache import ProviderCacheStore, build_cache_key
 from app.providers.etherscan import Throttle
 
 logger = logging.getLogger("chainguard.provider.alchemy")
@@ -77,7 +78,9 @@ class AlchemyClient:
         timeout_seconds: float = 10.0,
         sleep: Callable[[float], None] = time.sleep,
         throttle: Throttle | None = None,
+        cache: ProviderCacheStore | None = None,
     ) -> None:
+        self._cache = cache
         self._key = api_key
         self._http = http or httpx.Client()
         self._max_attempts = max_attempts
@@ -129,8 +132,22 @@ class AlchemyClient:
             )
         return _Outcome(outcome.status, outcome.data, outcome.detail, False, outcome.reverted)
 
+    def _cached_hex(self, op: str, chain_id: int, params: dict[str, Any], method: str, rpc_params: list[Any]) -> ProviderResult[str]:
+        # Only used for state reads that are safe to reuse briefly. eth_call is never cached.
+        key = None
+        if self._cache is not None:
+            key = build_cache_key(PROVIDER, chain_id, op, params)
+            hit = self._cache.get(key)
+            if hit is not None and hit.found and _is_hex(hit.raw):
+                return ProviderResult("ok", PROVIDER, hit.raw, None, hit.fetched_at)
+        res = _as_hex(self._rpc(chain_id, method, rpc_params))
+        if key is not None and res.status == "ok":
+            self._cache.put(key, PROVIDER, "ok", res.data, op, res.fetched_at)
+        return res
+
     def get_code(self, chain_id: int, address: str) -> ProviderResult[str]:
-        return _as_hex(self._rpc(chain_id, "eth_getCode", [normalize_address(address), "latest"]))
+        addr = normalize_address(address)
+        return self._cached_hex("code", chain_id, {"address": addr}, "eth_getCode", [addr, "latest"])
 
     def eth_call(
         self, chain_id: int, to: str, data: str, *, from_address: str | None = None
@@ -152,7 +169,10 @@ class AlchemyClient:
     def get_storage_at(self, chain_id: int, address: str, slot: str) -> ProviderResult[str]:
         if not _is_hex(slot) or len(slot) > 66:
             raise ValueError("invalid storage slot")
-        return _as_hex(self._rpc(chain_id, "eth_getStorageAt", [normalize_address(address), slot, "latest"]))
+        addr = normalize_address(address)
+        return self._cached_hex(
+            "storage", chain_id, {"address": addr, "slot": slot}, "eth_getStorageAt", [addr, slot, "latest"]
+        )
 
 
 @lru_cache
@@ -160,4 +180,4 @@ def build_alchemy_client() -> AlchemyClient | None:
     key = get_settings().alchemy_api_key
     if key is None:
         return None
-    return AlchemyClient(key.get_secret_value())
+    return AlchemyClient(key.get_secret_value(), cache=ProviderCacheStore())

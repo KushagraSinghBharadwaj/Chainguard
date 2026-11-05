@@ -11,6 +11,7 @@ import httpx
 
 from app.core.addresses import normalize_address
 from app.core.config import get_settings
+from app.providers.cache import ProviderCacheStore, build_cache_key
 from app.providers.base import (
     ContractSource,
     ProviderResult,
@@ -127,6 +128,15 @@ def _to_result(out: _Outcome, parse: Callable[[dict[str, Any]], Any]) -> Provide
         return ProviderResult("unavailable", PROVIDER, None, "unexpected_shape")
 
 
+def _source_ttl_op(rows: Any) -> str:
+    # Verified source rarely changes. An "unverified" answer can change soon, so it expires sooner.
+    try:
+        verified = bool(rows[0]["SourceCode"].strip())
+    except (KeyError, IndexError, TypeError, AttributeError):
+        return "contract_source_unverified"
+    return "contract_source" if verified else "contract_source_unverified"
+
+
 class EtherscanClient:
     """Etherscan API V2 adapter. Failures are typed results, never empty data."""
 
@@ -141,7 +151,9 @@ class EtherscanClient:
         timeout_seconds: float = 10.0,
         sleep: Callable[[float], None] = time.sleep,
         throttle: Throttle | None = None,
+        cache: ProviderCacheStore | None = None,
     ) -> None:
+        self._cache = cache
         self._key = api_key
         self._http = http or httpx.Client()
         self._max_attempts = max_attempts
@@ -224,7 +236,18 @@ class EtherscanClient:
         return self._list_call(chain_id, "tokentx", address, page, page_size, newest_first, end_block, _parse_token_transfer)
 
     def get_contract_source(self, chain_id: int, address: str) -> ProviderResult[ContractSource]:
-        out = self._call(chain_id, "contract", "getsourcecode", address=normalize_address(address))
+        addr = normalize_address(address)
+        key = None
+        cached_at = None
+        out = None
+        if self._cache is not None:
+            key = build_cache_key(PROVIDER, chain_id, "contract_source", {"address": addr})
+            hit = self._cache.get(key)
+            if hit is not None and hit.found:
+                out = _Outcome("ok", data=hit.raw)
+                cached_at = hit.fetched_at
+        if out is None:
+            out = self._call(chain_id, "contract", "getsourcecode", address=addr)
         if out.status != "ok":
             return ProviderResult(out.status, PROVIDER, None, out.detail)
         try:
@@ -244,7 +267,10 @@ class EtherscanClient:
             )
         except (KeyError, TypeError, ValueError, AttributeError):
             return ProviderResult("unavailable", PROVIDER, None, "unexpected_shape")
-        return ProviderResult("ok", PROVIDER, data, None)
+        fetched = cached_at or datetime.now(timezone.utc)
+        if key is not None and cached_at is None:
+            self._cache.put(key, PROVIDER, "ok", out.data, _source_ttl_op(out.data), fetched)
+        return ProviderResult("ok", PROVIDER, data, None, fetched)
 
 
 @lru_cache
@@ -252,4 +278,4 @@ def build_etherscan_client() -> EtherscanClient | None:
     key = get_settings().etherscan_api_key
     if key is None:
         return None
-    return EtherscanClient(key.get_secret_value())
+    return EtherscanClient(key.get_secret_value(), cache=ProviderCacheStore())

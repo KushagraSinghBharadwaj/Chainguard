@@ -2,6 +2,7 @@ import logging
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any
 
@@ -9,6 +10,7 @@ import httpx
 
 from app.core.addresses import normalize_address
 from app.providers.base import ProviderResult, ResultStatus
+from app.providers.cache import ProviderCacheStore, build_cache_key
 from app.providers.etherscan import Throttle
 
 logger = logging.getLogger("chainguard.provider.goplus")
@@ -150,7 +152,9 @@ class GoPlusClient:
         timeout_seconds: float = 15.0,
         sleep: Callable[[float], None] = time.sleep,
         throttle: Throttle | None = None,
+        cache: ProviderCacheStore | None = None,
     ) -> None:
+        self._cache = cache
         self._http = http or httpx.Client()
         self._max_attempts = max_attempts
         self._backoff = backoff_seconds
@@ -195,11 +199,28 @@ class GoPlusClient:
             )
         return outcome
 
+    def _cached_get(self, op: str, chain_id: int, addr: str, path: str, params: dict[str, str]):
+        # Returns (outcome, fetched_at): the provider answer time, original time for a cache hit.
+        # Empty results are never cached: they mean "not found" for tokens but "unavailable" for addresses.
+        key = None
+        if self._cache is not None:
+            key = build_cache_key(PROVIDER, chain_id, op, {"address": addr})
+            hit = self._cache.get(key)
+            if hit is not None and hit.found:
+                return _Outcome("ok", data=hit.raw), hit.fetched_at
+        out = self._get(path, params)
+        fetched = datetime.now(timezone.utc)
+        if key is not None and out.status == "ok" and out.data:
+            self._cache.put(key, PROVIDER, "ok", out.data, op, fetched)
+        return out, fetched
+
     def token_security(self, chain_id: int, address: str) -> ProviderResult[GoPlusToken]:
         addr = normalize_address(address)
         if chain_id not in SUPPORTED_CHAINS:
             return ProviderResult("unavailable", PROVIDER, None, "unsupported_chain")
-        out = self._get(f"token_security/{chain_id}", {"contract_addresses": addr})
+        out, cached_at = self._cached_get(
+            "goplus_token", chain_id, addr, f"token_security/{chain_id}", {"contract_addresses": addr}
+        )
         if out.status != "ok":
             return ProviderResult(out.status, PROVIDER, None, out.detail)
         result = out.data or {}
@@ -211,20 +232,22 @@ class GoPlusClient:
             return ProviderResult("unavailable", PROVIDER, None, "unexpected_shape")
         if not entry:
             return ProviderResult("not_found", PROVIDER, None, "no_data_for_token")
-        return ProviderResult("ok", PROVIDER, _parse_token(addr, entry), None)
+        return ProviderResult("ok", PROVIDER, _parse_token(addr, entry), None, cached_at)
 
     def address_security(self, chain_id: int, address: str) -> ProviderResult[GoPlusAddress]:
         addr = normalize_address(address)
         if chain_id not in SUPPORTED_CHAINS:
             return ProviderResult("unavailable", PROVIDER, None, "unsupported_chain")
-        out = self._get(f"address_security/{addr}", {"chain_id": str(chain_id)})
+        out, cached_at = self._cached_get(
+            "goplus_address", chain_id, addr, f"address_security/{addr}", {"chain_id": str(chain_id)}
+        )
         if out.status != "ok":
             return ProviderResult(out.status, PROVIDER, None, out.detail)
         if not out.data:
             return ProviderResult("unavailable", PROVIDER, None, "empty_result")
-        return ProviderResult("ok", PROVIDER, _parse_address(addr, out.data), None)
+        return ProviderResult("ok", PROVIDER, _parse_address(addr, out.data), None, cached_at)
 
 
 @lru_cache
 def build_goplus_client() -> GoPlusClient:
-    return GoPlusClient()
+    return GoPlusClient(cache=ProviderCacheStore())
