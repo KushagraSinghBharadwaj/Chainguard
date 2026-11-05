@@ -9,8 +9,10 @@ from typing import Any
 from app.core.addresses import normalize_address
 from app.engines.evidence import Evidence
 from app.engines.report import build_report
+from app.features.wallet_features import compute_wallet_features
 from app.engines.wallet_rules import (
     code_evidence,
+    features_evidence,
     counterparty_evidence,
     goplus_evidence,
     history_evidence,
@@ -82,6 +84,7 @@ def analyze_wallet(
     evidence += goplus_evidence(gp)
     evidence += code_evidence(contract)
     evidence += history_evidence(history, now)
+    evidence.append(features_evidence(compute_wallet_features(history, now), history.transactions.source, history.transactions.fetched_at))
 
     sources: list[tuple[str | None, datetime | None]] = [
         (history.transactions.source, history.transactions.fetched_at),

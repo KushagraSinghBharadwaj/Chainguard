@@ -13,6 +13,7 @@ from app.engines.evidence import Evidence
 from app.providers.base import ProviderResult
 from app.services.contract_data import ContractData
 from app.services.intel_lookup import IntelHit
+from app.features.wallet_features import WalletFeatures
 from app.services.wallet_data import WalletHistory
 
 NOT_RISK_FLAGS = frozenset({"contract_address"})
@@ -187,3 +188,48 @@ def history_evidence(history: WalletHistory, now: datetime) -> list[Evidence]:
             )
         )
     return out
+
+
+def features_evidence(f: WalletFeatures, source: str, fetched_at: datetime | None) -> Evidence:
+    """Descriptive numbers only (info). They never change the risk level. Counts come from the
+    fetched window, so they are lower bounds whenever a history flag is False."""
+    incomplete = [
+        name for name, ok in (("transactions", f.tx_history_complete), ("token transfers", f.token_history_complete)) if not ok
+    ]
+    note = ""
+    if incomplete:
+        note = " Counts for " + " and ".join(incomplete) + " are lower bounds because that history was truncated."
+    data = {
+        "tx_history_complete": f.tx_history_complete,
+        "token_history_complete": f.token_history_complete,
+        "age_days": f.age_days,
+        "tx_count": f.tx_count,
+        "sent_count": f.sent_count,
+        "received_count": f.received_count,
+        "contract_creations": f.contract_creations,
+        "window_days": f.window_days,
+        "tx_per_day": f.tx_per_day,
+        "recent_tx_30d": f.recent_tx_30d,
+        "failed_sent_count": f.failed_sent_count,
+        "failed_sent_ratio": f.failed_sent_ratio,
+        "eth_sent_wei": str(f.eth_sent_wei),
+        "eth_received_wei": str(f.eth_received_wei),
+        "unique_counterparties": f.unique_counterparties,
+        "fan_out": f.fan_out,
+        "fan_in": f.fan_in,
+        "counterparty_diversity": f.counterparty_diversity,
+        "token_transfer_count": f.token_transfer_count,
+        "unique_tokens": f.unique_tokens,
+        "token_counterparties": f.token_counterparties,
+    }
+    return Evidence(
+        id="wallet.features",
+        kind="rule",
+        claim="Activity summary computed from the fetched history." + note,
+        severity="info",
+        confidence=1.0,
+        verified=True,
+        data=data,
+        source=source,
+        fetched_at=fetched_at,
+    )
