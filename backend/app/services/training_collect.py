@@ -5,6 +5,7 @@ import argparse
 import dataclasses
 import json
 import logging
+from collections.abc import Callable
 from datetime import datetime, timezone
 
 from sqlalchemy import or_, select
@@ -48,8 +49,46 @@ def listed_addresses(session: Session, chain_id: int) -> set[str]:
     return {a.lower() for a in rows}
 
 
-def sample_unlabeled(conn, chain_id: int, listed: set[str], n: int, per_source: int = 2) -> int:
-    """Pick counterparties seen in collected histories. Listed and already-stored addresses are excluded."""
+def classify_code(code: str) -> str:
+    """Return "wallet" for no code or an EIP-7702 delegation, otherwise "contract"."""
+    if code == "0x" or code.lower().startswith("0xef0100"):
+        return "wallet"
+    return "contract"
+
+
+def make_kind_lookup(rpc, chain_id: int) -> Callable[[str], str]:
+    """Return kind_of(address) -> "wallet" | "contract" | "unknown", based on on-chain code.
+
+    A failed lookup is "unknown": it is never guessed and never cached.
+    """
+    cache: dict[str, str] = {}
+
+    def kind_of(address: str) -> str:
+        if address in cache:
+            return cache[address]
+        res = rpc.get_code(chain_id, address)
+        if res.status != "ok" or not isinstance(res.data, str):
+            return "unknown"
+        cache[address] = classify_code(res.data)
+        return cache[address]
+
+    return kind_of
+
+
+def sample_unlabeled(
+    conn,
+    chain_id: int,
+    listed: set[str],
+    n: int,
+    per_source: int = 2,
+    *,
+    kind_of: Callable[[str], str],
+) -> int:
+    """Pick counterparties seen in collected histories. Listed and already-stored addresses are excluded.
+
+    Only addresses that kind_of reports as "wallet" are kept: contracts (tokens, routers, exchanges)
+    are not ordinary wallets, and "unknown" is never guessed.
+    """
     known = {r["address"] for r in conn.execute("SELECT address FROM samples WHERE chain_id = ?", (chain_id,))}
     picked: list[str] = []
     seen = set(known)
@@ -68,6 +107,8 @@ def sample_unlabeled(conn, chain_id: int, listed: set[str], n: int, per_source: 
                 if a == row["address"] or a in seen or a in listed:
                     continue
                 seen.add(a)
+                if kind_of(a) != "wallet":
+                    continue
                 picked.append(a)
                 taken += 1
                 if taken >= per_source or len(picked) >= n:
@@ -119,7 +160,14 @@ def main() -> None:
             if args.load_positives:
                 print("positives added:", load_positives(session, conn, args.chain_id))
             if args.sample:
-                print("unlabeled added:", sample_unlabeled(conn, args.chain_id, listed_addresses(session, args.chain_id), args.sample))
+                from app.providers.alchemy import build_alchemy_client
+
+                rpc = build_alchemy_client()
+                if rpc is None:
+                    raise SystemExit("ALCHEMY_API_KEY is not set (needed to keep contracts out of the unlabeled sample)")
+                kind_of = make_kind_lookup(rpc, args.chain_id)
+                listed = listed_addresses(session, args.chain_id)
+                print("unlabeled added:", sample_unlabeled(conn, args.chain_id, listed, args.sample, kind_of=kind_of))
     provider = get_providers().history
     print("batch:", collect_batch(conn, provider, args.chain_id, args.limit), "at", datetime.now(timezone.utc).isoformat())
     print("store:", ts.counts(conn))
