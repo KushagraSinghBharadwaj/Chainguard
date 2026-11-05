@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
 
@@ -53,3 +54,9 @@ async def database_error_handler(request: Request, exc: OperationalError) -> JSO
         extra={"extra_fields": {"error_class": type(exc).__name__}},
     )
     return _envelope(request, 503, "database_unavailable", "Database is unavailable.")
+
+
+async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Field names only: never echo the submitted values back.
+    fields = sorted({".".join(str(p) for p in e["loc"][1:]) or "body" for e in exc.errors()})
+    return _envelope(request, 422, "invalid_request", "Invalid request: " + ", ".join(fields))

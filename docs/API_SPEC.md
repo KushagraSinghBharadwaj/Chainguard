@@ -72,3 +72,6 @@ possible: it appears as `coverage.status = unavailable`.
 - `chain_id` must be an enabled chain (only 1 at launch).
 - Addresses: `^0x[0-9a-fA-F]{40}$`; mixed-case input must pass the EIP-55 checksum; stored lowercase.
 - Strict Pydantic models, unknown fields rejected, size limits on every list and hex field.
+
+Response (added with Task 4.6): `{ "chain_id": 1, "results": [ { "address": "0x...", "address_type": "...", "intel_hits": [...], "status": "..." } ] }`.
+Addresses are returned lowercase, deduplicated, in request order. `status` is `checked` only when both lists are loaded; otherwise `unavailable`, and "no hits" must not be read as clean. `eoa` includes EIP-7702 delegated accounts.
