@@ -3,7 +3,7 @@
 import sqlite3
 from pathlib import Path
 
-DEFAULT_PATH = Path("data") / "training.sqlite"
+DEFAULT_PATH = Path(__file__).resolve().parents[2] / "data" / "training.sqlite"  # backend/data/
 LABELS = ("positive", "unlabeled")
 MAX_ATTEMPTS = 3
 
