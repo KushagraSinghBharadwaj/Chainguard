@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from app.api.deps import require_client
 from app.core.config import get_settings
 from app.db.session import DatabaseStatus, check_database
 
@@ -38,7 +39,11 @@ def health() -> HealthResponse:
     )
 
 
-@router.get("/config/status", response_model=ConfigStatusResponse)
+@router.get(
+    "/v1/config/status",
+    response_model=ConfigStatusResponse,
+    dependencies=[Depends(require_client)],
+)
 def config_status() -> ConfigStatusResponse:
     s = get_settings()
     return ConfigStatusResponse(

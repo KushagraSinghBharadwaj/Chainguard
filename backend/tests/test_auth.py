@@ -86,3 +86,12 @@ def test_expired_token_is_rejected():
     with get_engine().begin() as conn:
         conn.execute(text("UPDATE client_tokens SET expires_at = now() - interval '1 minute' WHERE client_id = CAST(:c AS uuid)"), {"c": body["client_id"]})
     assert client.post("/v1/clients/token/refresh", headers=_bearer(body["token"])).status_code == 401
+
+
+def test_config_status_requires_auth_and_old_path_is_gone():
+    assert client.get("/v1/config/status").status_code == 401
+    assert client.get("/config/status").status_code == 404
+    body = _register()
+    r = client.get("/v1/config/status", headers=_bearer(body["token"]))
+    assert r.status_code == 200
+    assert "database_configured" in r.json()

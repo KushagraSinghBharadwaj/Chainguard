@@ -17,12 +17,12 @@ def test_health_ok():
     assert "timestamp" in body
 
 
-def test_config_status_hides_secret_values(monkeypatch):
+def test_config_status_hides_secret_values(monkeypatch, auth_headers):
     monkeypatch.setenv("ETHERSCAN_API_KEY", "super-secret-value")
     get_settings.cache_clear()
     try:
         c = TestClient(create_app())
-        r = c.get("/config/status")
+        r = c.get("/v1/config/status", headers=auth_headers)
         assert r.status_code == 200
         assert r.json()["etherscan_configured"] is True
         assert "super-secret-value" not in r.text
