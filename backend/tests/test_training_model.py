@@ -61,7 +61,7 @@ def test_row_to_history_rebuilds_features(mem):
     h = tm.row_to_history(row)
     f = compute_wallet_features(h, datetime.fromisoformat(COLLECTED))
     assert (f.sent_count, f.received_count, f.failed_sent_count, f.fan_out, f.fan_in) == (4, 1, 2, 4, 1)
-    assert h.first_transaction.status == "complete" and f.age_days is not None
+    assert h.first_transaction.status == "skipped" and f.age_days is None
 
 
 def test_rows_without_transactions_are_excluded(mem):
@@ -100,3 +100,13 @@ def test_training_report_on_synthetic_data(mem):
     assert "0.5" in report["models"]["gradient_boosting"]["at_threshold"]
     assert report["models"]["gradient_boosting"]["pr_auc"] > report["split"]["test_prevalence"] + 0.2
     assert report["limits"] and report["excluded_features"]
+
+
+def test_window_keeps_only_the_newest_transactions(mem):
+    me = _addr("f", 2)
+    txs = [_tx(me, _addr("c", 900 + k), 5000 - k) for k in range(30)]
+    _fill(mem, "unlabeled", me, txs, 5000)
+    row = [r for r in tm.load_rows(mem, CHAIN) if r["address"] == me][0]
+    h = tm.row_to_history(row, window=10)
+    blocks = [t.block_number for t in h.transactions.items]
+    assert len(blocks) == 10 and min(blocks) == 4991 and h.transactions.status == "complete"

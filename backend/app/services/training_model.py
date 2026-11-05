@@ -18,9 +18,9 @@ THRESHOLDS = (0.3, 0.5, 0.7)
 RANDOM_STATE = 0
 MIN_ROWS = 20
 RECENCY_FEATURE = "recent_tx_30d"
+WINDOW_TX = 200
 
 FEATURES = (
-    "age_days",
     "tx_count",
     "sent_count",
     "received_count",
@@ -40,6 +40,7 @@ FEATURES = (
 )
 
 EXCLUDED = {
+    "age_days": "needs the first transaction, which the newest-window cut removes",
     "tx_history_complete": "coverage flag, not behavior",
     "token_history_complete": "coverage flag, not behavior",
     "token_transfer_count": "token transfers are not stored",
@@ -53,7 +54,7 @@ LIMITS = [
     "Unlabeled wallets were sampled from counterparties of positives, so they are linked to scam activity and are not typical wallets.",
     "The class ratio is a sampling choice, not the real-world rate. PR-AUC and precision depend on it; test prevalence is reported.",
     "The split is by cutoff_block (newest block in each stored history), which is last activity, not listing date.",
-    "Histories are capped; partial histories give lower-bound counts. Partial shares per class are reported.",
+    "Every wallet is cut to its newest 200 transactions and features use only that window, so capped and short histories look alike. Recency is measured against each wallet's own last transaction, not collection time. Original partial shares per class are still reported.",
     "gradient_boosting_without_recency drops recent_tx_30d to show how much the score depends on recent activity.",
     "decision_stump is a one-split baseline learned from training data. It is not the production rules engine.",
     "No accuracy claim is valid without these stored metrics.",
@@ -65,8 +66,12 @@ def _section(check, status, items, fetched_at):
     return HistorySection(check, status, tuple(items), 0, stop, None, "training_store", fetched_at)
 
 
-def row_to_history(row) -> WalletHistory:
-    """Rebuild a WalletHistory from a stored row. Token transfers are not stored, so that section is skipped."""
+def row_to_history(row, window: int = WINDOW_TX) -> WalletHistory:
+    """Rebuild a WalletHistory from a stored row, cut to the newest `window` transactions.
+
+    Every wallet is described by the same kind of window, so a capped history cannot be told apart from a short one.
+    Token transfers are not stored, and the first transaction is skipped because the cut removes it.
+    """
     data = json.loads(row["raw_json"])
     collected = datetime.fromisoformat(row["collected_at"])
     txs = []
@@ -74,19 +79,14 @@ def row_to_history(row) -> WalletHistory:
         t = dict(t)
         t["timestamp"] = datetime.fromisoformat(t["timestamp"])
         txs.append(Transaction(**t))
-    status = data["status"]
-    first_items = ()
-    first_status = "skipped"
-    if status == "complete":
-        first_status = "complete"
-        if txs:
-            first_items = (min(txs, key=lambda t: (t.block_number, t.timestamp)),)
+    txs.sort(key=lambda t: (t.block_number, t.timestamp), reverse=True)
+    txs = txs[:window]
     return WalletHistory(
         chain_id=row["chain_id"],
         address=row["address"],
-        transactions=_section("transactions", status, txs, collected),
+        transactions=_section("transactions", "complete", txs, collected),
         token_transfers=_section("token_transfers", "skipped", (), collected),
-        first_transaction=_section("first_transaction", first_status, first_items, collected),
+        first_transaction=_section("first_transaction", "skipped", (), collected),
         generated_at=collected,
     )
 
@@ -122,22 +122,32 @@ def load_rows(conn, chain_id: int):
     ).fetchall()
 
 
-def build_dataset(rows):
-    """Return (records, count of rows skipped for having no transactions)."""
+def build_dataset(rows, window: int = WINDOW_TX):
+    """Return (records, count of rows skipped for having no transactions).
+
+    Features are computed as of each wallet's own last transaction, not collection time.
+    """
     recs = []
     skipped = 0
     for r in rows:
         if r["cutoff_block"] is None:
             skipped += 1
             continue
-        h = row_to_history(r)
-        f = compute_wallet_features(h, datetime.fromisoformat(r["collected_at"]))
+        h = row_to_history(r, window)
+        items = h.transactions.items
+        if not items:
+            skipped += 1
+            continue
+        as_of = max(t.timestamp for t in items)
+        f = compute_wallet_features(h, as_of)
+        stored = json.loads(r["raw_json"])
         recs.append(
             {
                 "address": r["address"],
                 "y": 1 if r["label"] == "positive" else 0,
                 "block": r["cutoff_block"],
-                "partial": h.transactions.status != "complete",
+                "partial": stored["status"] != "complete",
+                "cut": len(stored["transactions"]) > window,
                 "x": feature_vector(f),
             }
         )
@@ -239,6 +249,7 @@ def train_and_report(recs, test_fraction: float = 0.3) -> dict:
     return {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "random_state": RANDOM_STATE,
+        "window_transactions": WINDOW_TX,
         "sklearn_version": sklearn.__version__,
         "split": {
             "method": "time, by cutoff_block (newest block in each stored history)",
