@@ -267,6 +267,34 @@ def train_and_report(recs, test_fraction: float = 0.3) -> dict:
     }
 
 
+def save_model(recs, name: str, path: str, test_fraction: float = 0.3) -> None:
+    """Refit one model on the train split only, so it matches the stored test metrics, and save it."""
+    import joblib
+    import numpy as np
+    import sklearn
+
+    train, _test, cut_block = time_split(recs, test_fraction)
+    est, idx = model_specs()[name]
+    xtr = np.array([r["x"] for r in train], dtype=float)[:, idx]
+    ytr = np.array([r["y"] for r in train])
+    est.fit(xtr, ytr)
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(
+        {
+            "model": est,
+            "model_name": name,
+            "features": [FEATURES[i] for i in idx],
+            "window_transactions": WINDOW_TX,
+            "sklearn_version": sklearn.__version__,
+            "cut_block": cut_block,
+            "medians": np.nanmedian(xtr, axis=0).tolist(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        },
+        out,
+    )
+
+
 def run(conn, chain_id: int, test_fraction: float = 0.3) -> dict:
     rows = load_rows(conn, chain_id)
     recs, without_tx = build_dataset(rows)
@@ -286,6 +314,8 @@ def main() -> None:
     ap.add_argument("--chain-id", type=int, default=1)
     ap.add_argument("--test-fraction", type=float, default=0.3)
     ap.add_argument("--out", default="ml_reports/wallet_model_metrics.json")
+    ap.add_argument("--save-model", default="", help="model name to save, e.g. gradient_boosting")
+    ap.add_argument("--model-out", default="ml_reports/wallet_model.joblib")
     args = ap.parse_args()
 
     conn = ts.connect(str(ts.DEFAULT_PATH))
@@ -305,6 +335,10 @@ def main() -> None:
         at = m["at_threshold"]["0.5"]
         print(f"{name:36s} pr_auc={m['pr_auc']:.3f} roc_auc={m['roc_auc']:.3f} p@0.5={at['precision']:.3f} r@0.5={at['recall']:.3f}")
     print("saved:", out)
+    if args.save_model:
+        recs, _ = build_dataset(load_rows(conn, args.chain_id))
+        save_model(recs, args.save_model, args.model_out, args.test_fraction)
+        print("model saved:", args.model_out)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ from app.services.contract_data import get_contract_data
 from app.services.graph_data import GraphData, collect_neighbor_graph
 from app.services.coverage import CoverageItem, from_section, translate_status
 from app.services.intel_lookup import IntelHit, IntelLookup, intel_coverage
+from app.services.model_inference import score_wallet
 from app.services.wallet_data import WalletHistory, get_wallet_history
 
 logger = logging.getLogger("chainguard.engine.wallet")
@@ -123,6 +124,8 @@ def analyze_wallet(
     evidence.append(features_evidence(compute_wallet_features(history, now), history.transactions.source, history.transactions.fetched_at))
     if graph is not None and graph_signals is not None and graph.status != "skipped":
         evidence.append(graph_evidence(graph_signals, graph, nearest_hits))
+    model_info, ml_ev = score_wallet(history, now)
+    evidence += ml_ev
 
     sources: list[tuple[str | None, datetime | None]] = [
         (history.transactions.source, history.transactions.fetched_at),
@@ -140,4 +143,5 @@ def analyze_wallet(
         coverage=coverage,
         data_sources=sources,
         now=now,
+        model=model_info,
     )

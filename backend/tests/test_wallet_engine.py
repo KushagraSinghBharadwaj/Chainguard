@@ -95,11 +95,12 @@ def cov(report, check):
     return next(c for c in report["coverage"] if c["check"] == check)
 
 
-def test_clean_wallet_with_every_required_check_is_low_but_never_called_safe():
+def test_clean_wallet_with_every_required_check_is_low_but_never_called_safe(monkeypatch):
+    monkeypatch.setattr("app.engines.wallet.score_wallet", lambda h, n: ({"status": "not_trained", "version": None}, []))
     r = run()
     assert r["risk_level"] == "LOW"
     assert "not a guarantee" in r["summary"]
-    assert r["model"] == {"status": "unavailable", "version": None}
+    assert r["model"] == {"status": "not_trained", "version": None}
     assert r["limitations"] and "does not mean an address is safe" in r["limitations"][0]
 
 

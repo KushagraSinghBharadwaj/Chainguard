@@ -7,7 +7,7 @@ from typing import Any
 from app.engines.evidence import Evidence, decide_level, evidence_level
 from app.services.coverage import CoverageItem
 
-ENGINE_VERSION = "wallet-rules-0.4"
+ENGINE_VERSION = "wallet-rules-0.5"
 
 _RANK = {"critical": 4, "high": 3, "moderate": 2, "low": 1, "info": 0}
 
@@ -69,6 +69,14 @@ def _coverage_limitations(coverage: list[CoverageItem]) -> list[str]:
     return out
 
 
+def _limitations(model: dict[str, Any] | None) -> list[str]:
+    base = list(BASE_LIMITATIONS)
+    if model and model.get("status") == "available":
+        base = [b for b in base if not b.startswith("No machine-learning")]
+        base.append("An experimental model score is included. It can raise but never lower the risk level, and it is trained on list-based labels, so it is not a probability of fraud.")
+    return base
+
+
 def build_report(
     *,
     chain_id: int,
@@ -78,6 +86,7 @@ def build_report(
     coverage: list[CoverageItem],
     data_sources: list[tuple[str | None, datetime | None]],
     now: datetime | None = None,
+    model: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     level = decide_level(evidence, coverage)
@@ -97,8 +106,8 @@ def build_report(
         "evidence": [e.to_api() for e in _ranked(evidence)],
         "coverage": [i.to_api() for i in coverage],
         "consequences": _consequences(evidence),
-        "limitations": list(BASE_LIMITATIONS) + _coverage_limitations(coverage),
-        "model": {"status": "unavailable", "version": None},
+        "limitations": _limitations(model) + _coverage_limitations(coverage),
+        "model": model or {"status": "unavailable", "version": None},
         "data_sources": [
             {"name": n, "fetched_at": f.isoformat() if f else None} for n, f in sorted(latest.items())
         ],
