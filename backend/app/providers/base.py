@@ -68,34 +68,16 @@ class ContractSource:
 
 class WalletHistoryProvider(Protocol):
     def get_transactions(
-        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True
+        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True, end_block: int | None = None
     ) -> ProviderResult[list[Transaction]]: ...
 
     def get_token_transfers(
-        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True
+        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True, end_block: int | None = None
     ) -> ProviderResult[list[TokenTransfer]]: ...
 
 
 class ContractInfoProvider(Protocol):
     def get_contract_source(self, chain_id: int, address: str) -> ProviderResult[ContractSource]: ...
-
-
-@dataclass(frozen=True)
-class CallOutcome:
-    """Result of an eth_call. A revert is a real answer, not a provider failure."""
-
-    reverted: bool
-    return_data: str | None  # hex return data when not reverted
-
-
-class RpcProvider(Protocol):
-    def get_code(self, chain_id: int, address: str) -> ProviderResult[str]: ...
-
-    def eth_call(
-        self, chain_id: int, to: str, data: str, *, from_address: str | None = None
-    ) -> ProviderResult[CallOutcome]: ...
-
-    def get_storage_at(self, chain_id: int, address: str, slot: str) -> ProviderResult[str]: ...
 
 
 @dataclass(frozen=True)

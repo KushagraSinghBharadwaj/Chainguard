@@ -195,6 +195,7 @@ class EtherscanClient:
         page: int,
         page_size: int,
         newest_first: bool,
+        end_block: int | None,
         parse: Callable[[dict[str, Any]], Any],
     ) -> ProviderResult:
         if page < 1 or not 1 <= page_size <= 1000:
@@ -205,7 +206,7 @@ class EtherscanClient:
             action,
             address=normalize_address(address),
             startblock=0,
-            endblock=99999999,
+            endblock=end_block if end_block is not None else 99999999,
             page=page,
             offset=page_size,
             sort="desc" if newest_first else "asc",
@@ -213,14 +214,14 @@ class EtherscanClient:
         return _to_result(out, parse)
 
     def get_transactions(
-        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True
+        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True, end_block: int | None = None
     ) -> ProviderResult[list[Transaction]]:
-        return self._list_call(chain_id, "txlist", address, page, page_size, newest_first, _parse_transaction)
+        return self._list_call(chain_id, "txlist", address, page, page_size, newest_first, end_block, _parse_transaction)
 
     def get_token_transfers(
-        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True
+        self, chain_id: int, address: str, *, page: int = 1, page_size: int = 100, newest_first: bool = True, end_block: int | None = None
     ) -> ProviderResult[list[TokenTransfer]]:
-        return self._list_call(chain_id, "tokentx", address, page, page_size, newest_first, _parse_token_transfer)
+        return self._list_call(chain_id, "tokentx", address, page, page_size, newest_first, end_block, _parse_token_transfer)
 
     def get_contract_source(self, chain_id: int, address: str) -> ProviderResult[ContractSource]:
         out = self._call(chain_id, "contract", "getsourcecode", address=normalize_address(address))
