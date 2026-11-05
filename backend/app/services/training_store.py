@@ -46,10 +46,28 @@ def add_addresses(conn: sqlite3.Connection, chain_id: int, addresses, label: str
     return conn.total_changes - before
 
 
-def claim_pending(conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
-    return conn.execute(
-        "SELECT * FROM samples WHERE status = 'pending' ORDER BY rowid LIMIT ?", (limit,)
-    ).fetchall()
+def claim_pending(conn: sqlite3.Connection, limit: int, unlabeled_share: float = 0.5) -> list[sqlite3.Row]:
+    """Claim up to limit pending rows, mixing labels so a stopped run still has both classes.
+
+    About unlabeled_share of the batch is unlabeled. If one label runs short, the other fills the rest.
+    Within a label, rows are taken in insertion order.
+    """
+
+    def take(unlabeled: bool, n: int) -> list[sqlite3.Row]:
+        if n <= 0:
+            return []
+        op = "=" if unlabeled else "!="
+        return conn.execute(
+            "SELECT * FROM samples WHERE status = 'pending' AND label " + op + " 'unlabeled' ORDER BY rowid LIMIT ?",
+            (n,),
+        ).fetchall()
+
+    want_unlabeled = round(limit * unlabeled_share)
+    pos = take(False, limit - want_unlabeled)
+    unl = take(True, limit - len(pos))
+    if len(pos) + len(unl) < limit:
+        pos = take(False, limit - len(unl))
+    return unl + pos
 
 
 def mark_done(conn, chain_id: int, address: str, cutoff_block: int | None, collected_at: str, raw_json: str) -> None:

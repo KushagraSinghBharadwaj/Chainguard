@@ -129,3 +129,40 @@ def test_kind_lookup_never_guesses_when_the_provider_fails_and_does_not_cache_fa
     assert kind(C1) == "unknown"
     rpc.answers[C1] = ProviderResult("ok", "alchemy", "0x")
     assert kind(C1) == "wallet"
+
+
+def _addrs(prefix, n):
+    return ["0x" + prefix + format(i, "x").zfill(39) for i in range(n)]
+
+
+def _claimed_labels(conn, limit):
+    rows = ts.claim_pending(conn, limit)
+    return len(rows), sum(1 for r in rows if r["label"] == "unlabeled")
+
+
+def test_claim_pending_mixes_both_labels(conn):
+    ts.add_addresses(conn, 1, _addrs("a", 6), "positive", "ofac_sdn")
+    ts.add_addresses(conn, 1, _addrs("b", 6), "unlabeled", "counterparty_of_collected")
+    assert _claimed_labels(conn, 4) == (4, 2)
+
+
+def test_claim_pending_fills_from_positives_when_unlabeled_runs_short(conn):
+    ts.add_addresses(conn, 1, _addrs("a", 5), "positive", "ofac_sdn")
+    ts.add_addresses(conn, 1, _addrs("b", 1), "unlabeled", "counterparty_of_collected")
+    assert _claimed_labels(conn, 4) == (4, 1)
+
+
+def test_claim_pending_fills_from_unlabeled_when_positives_run_short(conn):
+    ts.add_addresses(conn, 1, _addrs("a", 1), "positive", "ofac_sdn")
+    ts.add_addresses(conn, 1, _addrs("b", 5), "unlabeled", "counterparty_of_collected")
+    assert _claimed_labels(conn, 4) == (4, 3)
+
+
+def test_claim_pending_skips_rows_already_done(conn):
+    ts.add_addresses(conn, 1, _addrs("a", 2), "positive", "ofac_sdn")
+    ts.add_addresses(conn, 1, _addrs("b", 2), "unlabeled", "counterparty_of_collected")
+    first = ts.claim_pending(conn, 2)
+    for r in first:
+        ts.mark_done(conn, 1, r["address"], 1, "2026-11-05T00:00:00+00:00", "{}")
+    second = {r["address"] for r in ts.claim_pending(conn, 4)}
+    assert len(second) == 2 and not second & {r["address"] for r in first}
