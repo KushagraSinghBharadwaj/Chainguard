@@ -1,10 +1,14 @@
-﻿import logging
+import logging
 from functools import lru_cache
 from typing import Literal
 
+from collections.abc import Iterator
+
 from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.errors import ApiError
 
 logger = logging.getLogger("chainguard.db")
 
@@ -40,3 +44,12 @@ def check_database() -> DatabaseStatus:
             extra={"extra_fields": {"error_class": type(exc).__name__}},
         )
         return "unavailable"
+
+
+def get_db() -> Iterator[Session]:
+    """FastAPI dependency: one session per request."""
+    engine = get_engine()
+    if engine is None:
+        raise ApiError(503, "database_unavailable", "Database is not configured.")
+    with Session(engine) as session:
+        yield session

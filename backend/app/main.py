@@ -1,11 +1,15 @@
 import logging
 import time
+import uuid
 
 from fastapi import FastAPI, Request
 
+from app.api.clients import router as clients_router
 from app.api.health import router as health_router
+from app.core.errors import ApiError, api_error_handler, database_error_handler
 from app.core.config import get_settings
 from app.core.logging import setup_logging
+from sqlalchemy.exc import OperationalError
 
 logger = logging.getLogger("chainguard.http")
 
@@ -19,6 +23,7 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def log_requests(request: Request, call_next):
         start = time.perf_counter()
+        request.state.request_id = uuid.uuid4().hex
         try:
             response = await call_next(request)
         except Exception:
@@ -34,13 +39,17 @@ def create_app() -> FastAPI:
                     "method": request.method,
                     "path": request.url.path,  # query string deliberately not logged
                     "status": response.status_code,
+                    "request_id": request.state.request_id,
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                 }
             },
         )
         return response
 
+    app.add_exception_handler(ApiError, api_error_handler)
+    app.add_exception_handler(OperationalError, database_error_handler)
     app.include_router(health_router)
+    app.include_router(clients_router)
     return app
 
 
