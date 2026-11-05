@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # Secrets: SecretStr never prints its value in logs or repr output.
     database_url: SecretStr | None = None
     etherscan_api_key: SecretStr | None = None
+    alchemy_api_key: SecretStr | None = None
     rpc_url_ethereum: SecretStr | None = None
 
 
