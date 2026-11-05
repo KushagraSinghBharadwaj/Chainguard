@@ -1,0 +1,190 @@
+{
+  "created_at": "2026-11-05T17:53:18.321657+00:00",
+  "random_state": 0,
+  "window_transactions": 200,
+  "sklearn_version": "1.9.1",
+  "split": {
+    "method": "time, by cutoff_block (newest block in each stored history)",
+    "test_fraction": 0.3,
+    "cut_block": 23031790,
+    "train": {
+      "positive": 239,
+      "unlabeled": 180,
+      "partial_positive": 5,
+      "partial_unlabeled": 11
+    },
+    "test": {
+      "positive": 85,
+      "unlabeled": 95,
+      "partial_positive": 5,
+      "partial_unlabeled": 47
+    },
+    "test_prevalence": 0.4722222222222222
+  },
+  "features": [
+    "tx_count",
+    "sent_count",
+    "received_count",
+    "contract_creations",
+    "created_this_address",
+    "window_days",
+    "tx_per_day",
+    "recent_tx_30d",
+    "failed_sent_count",
+    "failed_sent_ratio",
+    "eth_sent",
+    "eth_received",
+    "unique_counterparties",
+    "fan_out",
+    "fan_in",
+    "counterparty_diversity"
+  ],
+  "excluded_features": {
+    "age_days": "needs the first transaction, which the newest-window cut removes",
+    "tx_history_complete": "coverage flag, not behavior",
+    "token_history_complete": "coverage flag, not behavior",
+    "token_transfer_count": "token transfers are not stored",
+    "unique_tokens": "token transfers are not stored",
+    "token_counterparties": "token transfers are not stored"
+  },
+  "thresholds": [
+    0.3,
+    0.5,
+    0.7
+  ],
+  "models": {
+    "majority_class": {
+      "pr_auc": 0.4722222222222222,
+      "roc_auc": 0.5,
+      "at_threshold": {
+        "0.3": {
+          "precision": 0.4722222222222222,
+          "recall": 1.0,
+          "predicted_positive": 180
+        },
+        "0.5": {
+          "precision": 0.4722222222222222,
+          "recall": 1.0,
+          "predicted_positive": 180
+        },
+        "0.7": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "predicted_positive": 0
+        }
+      },
+      "feature_count": 16
+    },
+    "decision_stump": {
+      "pr_auc": 0.4809618036817173,
+      "roc_auc": 0.5170278637770898,
+      "at_threshold": {
+        "0.3": {
+          "precision": 0.4722222222222222,
+          "recall": 1.0,
+          "predicted_positive": 180
+        },
+        "0.5": {
+          "precision": 0.48623853211009177,
+          "recall": 0.6235294117647059,
+          "predicted_positive": 109
+        },
+        "0.7": {
+          "precision": 0.48623853211009177,
+          "recall": 0.6235294117647059,
+          "predicted_positive": 109
+        }
+      },
+      "feature_count": 16
+    },
+    "logistic_regression": {
+      "pr_auc": 0.5856039978321887,
+      "roc_auc": 0.6078018575851393,
+      "at_threshold": {
+        "0.3": {
+          "precision": 0.5208333333333334,
+          "recall": 0.8823529411764706,
+          "predicted_positive": 144
+        },
+        "0.5": {
+          "precision": 0.5208333333333334,
+          "recall": 0.5882352941176471,
+          "predicted_positive": 96
+        },
+        "0.7": {
+          "precision": 0.5862068965517241,
+          "recall": 0.4,
+          "predicted_positive": 58
+        }
+      },
+      "feature_count": 16
+    },
+    "gradient_boosting": {
+      "pr_auc": 0.6444274387275588,
+      "roc_auc": 0.6734984520123839,
+      "at_threshold": {
+        "0.3": {
+          "precision": 0.5929203539823009,
+          "recall": 0.788235294117647,
+          "predicted_positive": 113
+        },
+        "0.5": {
+          "precision": 0.5833333333333334,
+          "recall": 0.6588235294117647,
+          "predicted_positive": 96
+        },
+        "0.7": {
+          "precision": 0.6301369863013698,
+          "recall": 0.5411764705882353,
+          "predicted_positive": 73
+        }
+      },
+      "feature_count": 16
+    },
+    "gradient_boosting_without_recency": {
+      "pr_auc": 0.6421438309375173,
+      "roc_auc": 0.6788235294117647,
+      "at_threshold": {
+        "0.3": {
+          "precision": 0.5603448275862069,
+          "recall": 0.7647058823529411,
+          "predicted_positive": 116
+        },
+        "0.5": {
+          "precision": 0.5773195876288659,
+          "recall": 0.6588235294117647,
+          "predicted_positive": 97
+        },
+        "0.7": {
+          "precision": 0.6103896103896104,
+          "recall": 0.5529411764705883,
+          "predicted_positive": 77
+        }
+      },
+      "feature_count": 15
+    }
+  },
+  "limits": [
+    "Positives come from OFAC and ScamSniffer lists, which carry no listing date, so features include activity after listing.",
+    "Non-fraud rows are unlabeled counterparties of collected wallets, not verified clean wallets. Contracts and unknown address kinds are excluded.",
+    "Unlabeled wallets were sampled from counterparties of positives, so they are linked to scam activity and are not typical wallets.",
+    "The class ratio is a sampling choice, not the real-world rate. PR-AUC and precision depend on it; test prevalence is reported.",
+    "The split is by cutoff_block (newest block in each stored history), which is last activity, not listing date.",
+    "Every wallet is cut to its newest 200 transactions and features use only that window, so capped and short histories look alike. Recency is measured against each wallet's own last transaction, not collection time. Original partial shares per class are still reported.",
+    "gradient_boosting_without_recency drops recent_tx_30d to show how much the score depends on recent activity.",
+    "decision_stump is a one-split baseline learned from training data. It is not the production rules engine.",
+    "No accuracy claim is valid without these stored metrics."
+  ],
+  "chain_id": 1,
+  "rows": {
+    "done": 650,
+    "used": 599,
+    "without_transactions": 51,
+    "overall": {
+      "positive": 324,
+      "unlabeled": 275,
+      "partial_positive": 10,
+      "partial_unlabeled": 58
+    }
+  }
+}
