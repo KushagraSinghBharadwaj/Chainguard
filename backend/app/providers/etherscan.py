@@ -21,6 +21,10 @@ from app.providers.base import (
 
 logger = logging.getLogger("chainguard.provider.etherscan")
 
+# httpx logs full request URLs at INFO, and our URLs carry the API key.
+for _name in ("httpx", "httpcore"):
+    logging.getLogger(_name).setLevel(logging.WARNING)
+
 BASE_URL = "https://api.etherscan.io/v2/api"
 PROVIDER = "etherscan"
 
