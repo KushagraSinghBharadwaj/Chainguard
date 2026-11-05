@@ -1,25 +1,25 @@
 {
-  "created_at": "2026-11-05T17:53:18.321657+00:00",
+  "created_at": "2026-11-05T19:46:54.637461+00:00",
   "random_state": 0,
   "window_transactions": 200,
   "sklearn_version": "1.9.1",
   "split": {
     "method": "time, by cutoff_block (newest block in each stored history)",
     "test_fraction": 0.3,
-    "cut_block": 23031790,
+    "cut_block": 19608891,
     "train": {
-      "positive": 239,
-      "unlabeled": 180,
-      "partial_positive": 5,
-      "partial_unlabeled": 11
+      "positive": 2348,
+      "unlabeled": 176,
+      "partial_positive": 4,
+      "partial_unlabeled": 7
     },
     "test": {
-      "positive": 85,
-      "unlabeled": 95,
-      "partial_positive": 5,
-      "partial_unlabeled": 47
+      "positive": 940,
+      "unlabeled": 144,
+      "partial_positive": 12,
+      "partial_unlabeled": 65
     },
-    "test_prevalence": 0.4722222222222222
+    "test_prevalence": 0.8671586715867159
   },
   "features": [
     "tx_count",
@@ -54,111 +54,111 @@
   ],
   "models": {
     "majority_class": {
-      "pr_auc": 0.4722222222222222,
+      "pr_auc": 0.8671586715867159,
       "roc_auc": 0.5,
       "at_threshold": {
         "0.3": {
-          "precision": 0.4722222222222222,
+          "precision": 0.8671586715867159,
           "recall": 1.0,
-          "predicted_positive": 180
+          "predicted_positive": 1084
         },
         "0.5": {
-          "precision": 0.4722222222222222,
+          "precision": 0.8671586715867159,
           "recall": 1.0,
-          "predicted_positive": 180
+          "predicted_positive": 1084
         },
         "0.7": {
-          "precision": 0.0,
-          "recall": 0.0,
-          "predicted_positive": 0
+          "precision": 0.8671586715867159,
+          "recall": 1.0,
+          "predicted_positive": 1084
         }
       },
       "feature_count": 16
     },
     "decision_stump": {
-      "pr_auc": 0.4809618036817173,
-      "roc_auc": 0.5170278637770898,
+      "pr_auc": 0.8611079977270792,
+      "roc_auc": 0.47334515366430263,
       "at_threshold": {
         "0.3": {
-          "precision": 0.4722222222222222,
-          "recall": 1.0,
-          "predicted_positive": 180
+          "precision": 0.8544061302681992,
+          "recall": 0.474468085106383,
+          "predicted_positive": 522
         },
         "0.5": {
-          "precision": 0.48623853211009177,
-          "recall": 0.6235294117647059,
-          "predicted_positive": 109
+          "precision": 0.8544061302681992,
+          "recall": 0.474468085106383,
+          "predicted_positive": 522
         },
         "0.7": {
-          "precision": 0.48623853211009177,
-          "recall": 0.6235294117647059,
-          "predicted_positive": 109
+          "precision": 0.8544061302681992,
+          "recall": 0.474468085106383,
+          "predicted_positive": 522
         }
       },
       "feature_count": 16
     },
     "logistic_regression": {
-      "pr_auc": 0.5856039978321887,
-      "roc_auc": 0.6078018575851393,
+      "pr_auc": 0.9051690890578759,
+      "roc_auc": 0.6363844562647755,
       "at_threshold": {
         "0.3": {
-          "precision": 0.5208333333333334,
-          "recall": 0.8823529411764706,
-          "predicted_positive": 144
+          "precision": 0.879245283018868,
+          "recall": 0.9914893617021276,
+          "predicted_positive": 1060
         },
         "0.5": {
-          "precision": 0.5208333333333334,
-          "recall": 0.5882352941176471,
-          "predicted_positive": 96
+          "precision": 0.8924111431316042,
+          "recall": 0.9882978723404255,
+          "predicted_positive": 1041
         },
         "0.7": {
-          "precision": 0.5862068965517241,
-          "recall": 0.4,
-          "predicted_positive": 58
+          "precision": 0.9026104417670683,
+          "recall": 0.9563829787234043,
+          "predicted_positive": 996
         }
       },
       "feature_count": 16
     },
     "gradient_boosting": {
-      "pr_auc": 0.6444274387275588,
-      "roc_auc": 0.6734984520123839,
+      "pr_auc": 0.9256844451586148,
+      "roc_auc": 0.7017361111111111,
       "at_threshold": {
         "0.3": {
-          "precision": 0.5929203539823009,
-          "recall": 0.788235294117647,
-          "predicted_positive": 113
+          "precision": 0.8905472636815921,
+          "recall": 0.9521276595744681,
+          "predicted_positive": 1005
         },
         "0.5": {
-          "precision": 0.5833333333333334,
-          "recall": 0.6588235294117647,
-          "predicted_positive": 96
+          "precision": 0.8943589743589744,
+          "recall": 0.9276595744680851,
+          "predicted_positive": 975
         },
         "0.7": {
-          "precision": 0.6301369863013698,
-          "recall": 0.5411764705882353,
-          "predicted_positive": 73
+          "precision": 0.9058441558441559,
+          "recall": 0.8904255319148936,
+          "predicted_positive": 924
         }
       },
       "feature_count": 16
     },
     "gradient_boosting_without_recency": {
-      "pr_auc": 0.6421438309375173,
-      "roc_auc": 0.6788235294117647,
+      "pr_auc": 0.9243377234525144,
+      "roc_auc": 0.7021793735224588,
       "at_threshold": {
         "0.3": {
-          "precision": 0.5603448275862069,
-          "recall": 0.7647058823529411,
-          "predicted_positive": 116
+          "precision": 0.8987854251012146,
+          "recall": 0.9446808510638298,
+          "predicted_positive": 988
         },
         "0.5": {
-          "precision": 0.5773195876288659,
-          "recall": 0.6588235294117647,
-          "predicted_positive": 97
+          "precision": 0.9041095890410958,
+          "recall": 0.9127659574468086,
+          "predicted_positive": 949
         },
         "0.7": {
-          "precision": 0.6103896103896104,
-          "recall": 0.5529411764705883,
-          "predicted_positive": 77
+          "precision": 0.9139664804469274,
+          "recall": 0.8702127659574468,
+          "predicted_positive": 895
         }
       },
       "feature_count": 15
@@ -177,14 +177,14 @@
   ],
   "chain_id": 1,
   "rows": {
-    "done": 650,
-    "used": 599,
-    "without_transactions": 51,
+    "done": 5042,
+    "used": 3608,
+    "without_transactions": 1434,
     "overall": {
-      "positive": 324,
-      "unlabeled": 275,
-      "partial_positive": 10,
-      "partial_unlabeled": 58
+      "positive": 3288,
+      "unlabeled": 320,
+      "partial_positive": 16,
+      "partial_unlabeled": 72
     }
   }
 }
