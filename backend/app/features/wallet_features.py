@@ -22,6 +22,7 @@ class WalletFeatures:
     sent_count: int
     received_count: int
     contract_creations: int
+    created_this_address: int  # creation record of this address, sent by another account
     window_days: float | None  # time span covered by the fetched transactions
     tx_per_day: float | None  # tx_count over the fetched window; None for fewer than 2 transactions
     recent_tx_30d: int | None  # None when the fetched window does not reach back 30 days
@@ -48,6 +49,7 @@ def compute_wallet_features(history: WalletHistory, now: datetime) -> WalletFeat
     tx_complete = history.transactions.status == "complete"
 
     sent = received = creations = failed_sent = others = 0
+    created_this = 0
     eth_sent = eth_received = 0
     recipients: set[str] = set()
     senders: set[str] = set()
@@ -71,6 +73,8 @@ def compute_wallet_features(history: WalletHistory, now: datetime) -> WalletFeat
                 eth_received += t.value_wei
             senders.add(frm)
             others += 1
+        elif to is None:
+            created_this += 1
 
     stamps = [_utc(t.timestamp) for t in txs]
     window_days: float | None = None
@@ -111,6 +115,7 @@ def compute_wallet_features(history: WalletHistory, now: datetime) -> WalletFeat
         sent_count=sent,
         received_count=received,
         contract_creations=creations,
+        created_this_address=created_this,
         window_days=window_days,
         tx_per_day=per_day,
         recent_tx_30d=recent,

@@ -107,3 +107,9 @@ def test_frequency_uses_the_fetched_window_and_needs_two_transactions():
 def test_complete_flags_follow_the_section_status():
     f = feats(txs=[tx(1, ME, B, 1)])
     assert f.tx_history_complete is True and f.token_history_complete is True
+
+
+def test_creation_of_this_address_by_another_account_is_counted_separately():
+    f = feats(txs=[tx(1, B, None, 1), tx(2, D, ME, 2)])
+    assert f.created_this_address == 1 and f.received_count == 1 and f.contract_creations == 0
+    assert f.sent_count + f.received_count + f.created_this_address == f.tx_count

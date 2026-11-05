@@ -207,6 +207,7 @@ def features_evidence(f: WalletFeatures, source: str, fetched_at: datetime | Non
         "sent_count": f.sent_count,
         "received_count": f.received_count,
         "contract_creations": f.contract_creations,
+        "created_this_address": f.created_this_address,
         "window_days": f.window_days,
         "tx_per_day": f.tx_per_day,
         "recent_tx_30d": f.recent_tx_30d,
