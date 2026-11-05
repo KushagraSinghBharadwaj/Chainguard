@@ -60,7 +60,8 @@ def test_graph_failure_is_reported_and_does_not_block_low():
 def test_wallet_without_transactions_skips_the_graph():
     r = run()
     assert cov(r, "graph")["status"] == "skipped"
-    assert not any(e["id"] == "graph.signals" for e in r["evidence"]) or True
+    assert not any(e["id"] == "graph.signals" for e in r["evidence"])
+    assert cov(r, "graph")["status"] == "skipped"
 
 
 def test_graph_is_skipped_when_the_intel_database_is_down():

@@ -121,7 +121,7 @@ def analyze_wallet(
     evidence += code_evidence(contract)
     evidence += history_evidence(history, now)
     evidence.append(features_evidence(compute_wallet_features(history, now), history.transactions.source, history.transactions.fetched_at))
-    if graph is not None and graph_signals is not None:
+    if graph is not None and graph_signals is not None and graph.status != "skipped":
         evidence.append(graph_evidence(graph_signals, graph, nearest_hits))
 
     sources: list[tuple[str | None, datetime | None]] = [
