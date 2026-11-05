@@ -13,7 +13,9 @@ from app.engines.evidence import Evidence
 from app.providers.base import ProviderResult
 from app.services.contract_data import ContractData
 from app.services.intel_lookup import IntelHit
+from app.features.graph import GraphSignals
 from app.features.wallet_features import WalletFeatures
+from app.services.graph_data import GraphData
 from app.services.wallet_data import WalletHistory
 
 NOT_RISK_FLAGS = frozenset({"contract_address"})
@@ -233,4 +235,48 @@ def features_evidence(f: WalletFeatures, source: str, fetched_at: datetime | Non
         data=data,
         source=source,
         fetched_at=fetched_at,
+    )
+
+
+def graph_evidence(sig: GraphSignals, graph: GraphData, nearest_hits: Iterable[IntelHit]) -> Evidence:
+    # Descriptive only (info): thresholds need measured data. The graph holds only what was
+    # fetched, so "none found" never means "no link exists".
+    sources = sorted({h.source for h in nearest_hits})
+    if sig.hop_distance is not None:
+        where = (
+            f"A listed address ({', '.join(sources) or 'a stored list'}) is {sig.hop_distance} hop(s) "
+            "from this wallet in the fetched transaction graph."
+        )
+    else:
+        where = (
+            f"No listed address was found within {sig.searched_hops} hop(s) of the fetched graph. "
+            "This does not mean no link exists."
+        )
+    cover = f" The graph covers the wallet's fetched history plus {graph.neighbors_expanded} of {graph.neighbors_total} neighbors."
+    data = {
+        "nearest_listed_address": sig.nearest_listed_address,
+        "nearest_listed_sources": sources,
+        "hop_distance": sig.hop_distance,
+        "searched_hops": sig.searched_hops,
+        "cycle_count": sig.cycle_count,
+        "shortest_cycle": sig.shortest_cycle,
+        "peel_chain_length": sig.peel_chain_length,
+        "node_count": sig.node_count,
+        "edge_count": sig.edge_count,
+        "calls_made": graph.calls_made,
+        "neighbors_total": graph.neighbors_total,
+        "neighbors_expanded": graph.neighbors_expanded,
+        "graph_status": graph.status,
+        "graph_detail": graph.detail,
+    }
+    return Evidence(
+        id="graph.signals",
+        kind="rule",
+        claim=where + cover,
+        severity="info",
+        confidence=1.0,
+        verified=True,
+        data=data,
+        source=graph.source,
+        fetched_at=graph.fetched_at,
     )

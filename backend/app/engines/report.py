@@ -7,7 +7,7 @@ from typing import Any
 from app.engines.evidence import Evidence, decide_level, evidence_level
 from app.services.coverage import CoverageItem
 
-ENGINE_VERSION = "wallet-rules-0.3"
+ENGINE_VERSION = "wallet-rules-0.4"
 
 _RANK = {"critical": 4, "high": 3, "moderate": 2, "low": 1, "info": 0}
 
