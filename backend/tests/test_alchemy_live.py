@@ -23,10 +23,13 @@ def test_live_contract_has_code():
     assert r.status == "ok" and len(r.data) > 100
 
 
-def test_live_wallet_has_no_code():
+def test_live_wallet_code_is_returned_verbatim():
+    # WALLET carries an EIP-7702 delegation designator (0xef0100 + 20-byte address),
+    # so "no code" is not a valid expectation. The adapter must return the code unchanged.
     r = _client().get_code(1, WALLET)
     print("\nwallet code:", r.status, r.detail, r.data)
-    assert r.status == "ok" and r.data == "0x"
+    assert r.status == "ok"
+    assert r.data == "0x" or r.data.startswith("0xef0100")
 
 
 def test_live_symbol_call():
@@ -36,14 +39,21 @@ def test_live_symbol_call():
 
 
 def test_live_revert_is_reported():
-    # transfer(0x2222..., 1) from an address that holds no WETH must revert.
-    data = "0xa9059cbb" + "0" * 24 + "2" * 40 + "%064x" % 1
+    # transfer of 2**255 WETH exceeds total supply, so it must revert for any sender.
+    data = "0xa9059cbb" + "0" * 24 + "2" * 40 + "%064x" % (2**255)
     r = _client().eth_call(1, WETH, data, from_address="0x" + "1" * 40)
     print("\nrevert call:", r.status, r.detail, r.data)
     assert r.status == "ok" and r.data.reverted is True
 
 
-def test_live_eip1967_implementation_slot():
-    r = _client().get_storage_at(1, USDC_PROXY, EIP1967_IMPL_SLOT)
-    print("\nusdc impl slot:", r.status, r.detail, r.data)
-    assert r.status == "ok" and len(r.data) == 66 and int(r.data, 16) != 0
+ZOS_IMPL_SLOT = "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
+
+
+def test_live_usdc_uses_legacy_zos_slot_not_eip1967():
+    c = _client()
+    r1 = c.get_storage_at(1, USDC_PROXY, EIP1967_IMPL_SLOT)
+    r2 = c.get_storage_at(1, USDC_PROXY, ZOS_IMPL_SLOT)
+    print("\nusdc eip1967 slot:", r1.status, r1.detail, r1.data)
+    print("usdc zos slot:", r2.status, r2.detail, r2.data)
+    assert r1.status == "ok" and int(r1.data, 16) == 0
+    assert r2.status == "ok" and len(r2.data) == 66 and int(r2.data, 16) != 0
