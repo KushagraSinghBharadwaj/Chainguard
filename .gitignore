@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / extension build
+node_modules/
+dist/
+build/
+
+# ML data (provenance is documented in docs/, raw data is not committed)
+ml/data/*
+!ml/data/.gitkeep
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db
