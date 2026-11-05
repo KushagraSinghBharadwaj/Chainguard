@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from app.api import deps
 from app.api.clients import register_limiter
 from app.db.session import get_engine
 from app.main import app
@@ -18,6 +19,13 @@ def auth_headers():
         conn.execute(text("DELETE FROM client_tokens WHERE client_id = CAST(:c AS uuid)"), params)
         conn.execute(text("DELETE FROM clients WHERE id = CAST(:c AS uuid)"), params)
     register_limiter.reset()
+
+
+@pytest.fixture(autouse=True)
+def _reset_api_limiters():
+    deps.reset_limiters()
+    yield
+    deps.reset_limiters()
 
 
 def pytest_addoption(parser):

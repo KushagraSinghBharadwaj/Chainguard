@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     etherscan_api_key: SecretStr | None = None
     alchemy_api_key: SecretStr | None = None
     rpc_url_ethereum: SecretStr | None = None
+
+    # Rate limits for authenticated routes (burst size and sustained rate per minute).
+    rate_limit_token_burst: int = Field(default=30, ge=1)
+    rate_limit_token_per_minute: int = Field(default=30, ge=1)
+    rate_limit_ip_burst: int = Field(default=60, ge=1)
+    rate_limit_ip_per_minute: int = Field(default=60, ge=1)
+    # Only set true behind a reverse proxy you control; otherwise X-Forwarded-For is spoofable.
+    trust_proxy_headers: bool = False
 
 
 @lru_cache

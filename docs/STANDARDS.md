@@ -37,3 +37,9 @@
 Architecture approved; providers/intel/dataset strategy approved; schema, API contract and standards written;
 environment recorded; repo scaffolded and committed. Items needing user accounts (Etherscan key, RPC account)
 are Phase 2 prerequisites.
+
+## Rate limiting
+- Authenticated /v1 routes: per-IP bucket (before DB lookup) and per-token bucket (after auth); 429 with Retry-After. Registration has its own per-IP bucket.
+- Limits are configurable via RATE_LIMIT_* settings. X-Forwarded-For is ignored unless TRUST_PROXY_HEADERS=true (spoofable otherwise).
+- Known limitation: buckets are in-process memory. With multiple workers each has its own counters, so effective limits multiply. Move to a shared store (e.g. Redis or PostgreSQL) before multi-worker deployment.
+

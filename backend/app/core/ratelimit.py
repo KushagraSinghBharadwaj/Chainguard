@@ -1,20 +1,31 @@
 import threading
 import time
+from collections.abc import Callable
 
 
 class TokenBucket:
-    """In-process token bucket (single-process dev setup; see DATABASE_SCHEMA.md)."""
+    """In-process token bucket (single-process dev setup; see DATABASE_SCHEMA.md).
 
-    def __init__(self, capacity: int, refill_per_second: float, max_keys: int = 10_000) -> None:
+    The clock is injectable so tests can control time without sleeping.
+    """
+
+    def __init__(
+        self,
+        capacity: int,
+        refill_per_second: float,
+        max_keys: int = 10_000,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
         self._capacity = float(capacity)
         self._rate = refill_per_second
         self._max_keys = max_keys
+        self._clock = clock
         self._state: dict[str, tuple[float, float]] = {}
         self._lock = threading.Lock()
 
     def allow(self, key: str) -> tuple[bool, float]:
         """Return (allowed, retry_after_seconds)."""
-        now = time.monotonic()
+        now = self._clock()
         with self._lock:
             tokens, last = self._state.get(key, (self._capacity, now))
             tokens = min(self._capacity, tokens + (now - last) * self._rate)

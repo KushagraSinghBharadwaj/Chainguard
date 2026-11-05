@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import AuthContext, require_client
+from app.core.clientip import client_ip
+from app.core.config import get_settings
 from app.core.errors import ApiError
 from app.core.ratelimit import TokenBucket
 from app.core.security import TOKEN_TTL, hash_token, new_token
@@ -40,7 +42,7 @@ def _issue_token(db: Session, client_id: UUID) -> tuple[str, datetime]:
 
 @router.post("/register", response_model=TokenResponse)
 def register(request: Request, db: Session = Depends(get_db)) -> TokenResponse:
-    ip = request.client.host if request.client else "unknown"
+    ip = client_ip(request, get_settings().trust_proxy_headers)
     allowed, retry_after = register_limiter.allow(ip)
     if not allowed:
         raise ApiError(
