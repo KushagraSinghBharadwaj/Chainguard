@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.core.config import get_settings
+from app.db.session import DatabaseStatus, check_database
 
 router = APIRouter()
 
@@ -13,6 +14,7 @@ class HealthResponse(BaseModel):
     service: str
     version: str
     timestamp: datetime
+    database: DatabaseStatus
 
 
 class ConfigStatusResponse(BaseModel):
@@ -32,6 +34,7 @@ def health() -> HealthResponse:
         service=s.app_name,
         version=s.app_version,
         timestamp=datetime.now(timezone.utc),
+        database=check_database(),
     )
 
 
