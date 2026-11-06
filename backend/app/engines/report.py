@@ -69,8 +69,8 @@ def _coverage_limitations(coverage: list[CoverageItem]) -> list[str]:
     return out
 
 
-def _limitations(model: dict[str, Any] | None) -> list[str]:
-    base = list(BASE_LIMITATIONS)
+def _limitations(model: dict[str, Any] | None, base_limitations: tuple[str, ...] | None = None) -> list[str]:
+    base = list(base_limitations or BASE_LIMITATIONS)
     if model and model.get("status") == "available":
         base = [b for b in base if not b.startswith("No machine-learning")]
         base.append("An experimental model score is included. It can raise but never lower the risk level, and it is trained on list-based labels, so it is not a probability of fraud.")
@@ -87,6 +87,8 @@ def build_report(
     data_sources: list[tuple[str | None, datetime | None]],
     now: datetime | None = None,
     model: dict[str, Any] | None = None,
+    engine_version: str | None = None,
+    base_limitations: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     level = decide_level(evidence, coverage)
@@ -106,11 +108,11 @@ def build_report(
         "evidence": [e.to_api() for e in _ranked(evidence)],
         "coverage": [i.to_api() for i in coverage],
         "consequences": _consequences(evidence),
-        "limitations": _limitations(model) + _coverage_limitations(coverage),
+        "limitations": _limitations(model, base_limitations) + _coverage_limitations(coverage),
         "model": model or {"status": "unavailable", "version": None},
         "data_sources": [
             {"name": n, "fetched_at": f.isoformat() if f else None} for n, f in sorted(latest.items())
         ],
         "generated_at": now.isoformat(),
-        "engine_version": ENGINE_VERSION,
+        "engine_version": engine_version or ENGINE_VERSION,
     }

@@ -1,0 +1,82 @@
+"""Deterministic token rules (5.2). Pure functions: facts in, evidence out.
+
+GoPlus is a third party, so its flags are never marked verified. Thresholds are initial
+guesses, not measured. A missing field produces no evidence: unknown is not False.
+"""
+
+from typing import Any
+
+from app.engines.evidence import Evidence
+from app.providers.base import ProviderResult
+from app.services.contract_data import Section
+
+HIGH_TAX = 0.5
+MODERATE_TAX = 0.1
+
+
+def _ev(id_: str, claim: str, severity: str, data: dict[str, Any], res: ProviderResult[Any]) -> Evidence:
+    return Evidence(
+        id=id_, kind="provider", claim=claim, severity=severity, confidence=0.6,
+        verified=False, data=data, source=res.provider, fetched_at=res.fetched_at,
+    )
+
+
+def goplus_token_evidence(res: ProviderResult[Any]) -> list[Evidence]:
+    if res.status != "ok" or res.data is None:
+        return []
+    t = res.data
+    out: list[Evidence] = []
+    if t.is_honeypot is True:
+        out.append(_ev("provider.goplus.token.honeypot",
+                       "GoPlus flags this token as a honeypot: buying may work but selling may not.", "critical", {}, res))
+    if t.cannot_buy is True:
+        out.append(_ev("provider.goplus.token.cannot_buy", "GoPlus reports this token cannot be bought.", "high", {}, res))
+    for name, val in (("sell", t.sell_tax), ("buy", t.buy_tax), ("transfer", t.transfer_tax)):
+        if val is None or val < MODERATE_TAX:
+            continue
+        out.append(_ev(
+            f"provider.goplus.token.{name}_tax",
+            f"GoPlus reports a {name} tax of {val * 100:.1f}%.",
+            "high" if val >= HIGH_TAX else "moderate",
+            {"tax": val}, res,
+        ))
+    if t.is_open_source is False:
+        out.append(_ev("provider.goplus.token.not_open_source",
+                       "GoPlus reports the contract source is not open, so its code cannot be reviewed.", "moderate", {}, res))
+    out.append(_ev(
+        "provider.goplus.token.facts",
+        "Token facts reported by GoPlus.",
+        "info",
+        {
+            "name": t.name, "symbol": t.symbol, "holder_count": t.holder_count,
+            "is_in_dex": t.is_in_dex, "trust_list": t.trust_list, "is_proxy": t.is_proxy,
+        },
+        res,
+    ))
+    return out
+
+
+def proxy_evidence(sec: Section) -> list[Evidence]:
+    if sec.status != "ok" or sec.data is None or sec.data.conclusion != "proxy_detected":
+        return []
+    a = sec.data
+    patterns = sorted({f.pattern for f in a.findings})
+    source = sec.source or "alchemy,etherscan"
+    out = [Evidence(
+        id="contract.proxy", kind="rule",
+        claim=(
+            "This contract is a proxy (" + ", ".join(patterns) + "). If it is upgradable, whoever controls the upgrade "
+            "can change its behavior. Admin and upgradability were not checked."
+        ),
+        severity="info", confidence=1.0, verified=True,
+        data={"patterns": patterns, "implementation": a.implementation}, source=source, fetched_at=sec.fetched_at,
+    )]
+    if a.implementations_disagree:
+        out.append(Evidence(
+            id="contract.proxy.implementations_disagree", kind="rule",
+            claim="Different proxy checks point to different implementation addresses.",
+            severity="low", confidence=1.0, verified=True,
+            data={"implementations": sorted({f.implementation for f in a.findings if f.implementation})},
+            source=source, fetched_at=sec.fetched_at,
+        ))
+    return out

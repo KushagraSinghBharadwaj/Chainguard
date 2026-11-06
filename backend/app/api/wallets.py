@@ -12,6 +12,7 @@ from app.api.providers_dep import Providers, get_providers
 from app.core.errors import ApiError
 from app.db.session import get_db
 from app.engines.report import ENGINE_VERSION
+from app.engines.token import TOKEN_ENGINE_VERSION, analyze_token
 from app.engines.wallet import analyze_wallet
 from app.schemas.requests import AddressAnalyzeRequest, AddressLookupRequest
 from app.services import report_store
@@ -100,3 +101,26 @@ def lookup(
             }
         )
     return {"chain_id": body.chain_id, "results": results}
+
+
+@router.post("/tokens/analyze")
+def analyze_token_endpoint(
+    body: AddressAnalyzeRequest,
+    auth: AuthContext = Depends(require_client),
+    db: Session = Depends(get_db),
+    providers: Providers = Depends(get_providers),
+) -> dict[str, Any]:
+    require_supported_chain(db, body.chain_id)
+    cached = report_store.get_fresh(db, body.chain_id, "token", body.address, TOKEN_ENGINE_VERSION)
+    if cached is not None:
+        return cached
+    report = analyze_token(
+        body.chain_id,
+        body.address,
+        rpc=providers.rpc,
+        explorer=providers.explorer,
+        goplus=providers.goplus,
+        intel_lookup=lambda cid, addrs: lookup_intel(db, cid, addrs),
+    )
+    report_store.save(db, report)
+    return report
