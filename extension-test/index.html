@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ChainGuard interception test</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 16px;color:#1a2238}
+button{font:inherit;font-weight:600;padding:10px 16px;border-radius:8px;border:0;background:#2f5bff;color:#fff;cursor:pointer}
+pre{background:#f4f6fb;border:1px solid #e1e5ef;border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all}
+.warn{background:#fff6e0;border:1px solid #f0d28a;border-radius:8px;padding:10px 14px}
+</style></head>
+<body>
+<h2>ChainGuard interception test</h2>
+<p class="warn"><b>Always reject.</b> This asks your real wallet to approve unlimited USDT spending to Uniswap Permit2.
+ChainGuard should show a result first. Click <b>Reject</b> in ChainGuard, or reject in your wallet. Never confirm it.</p>
+<p><button id="send">Request unlimited USDT approval</button></p>
+<pre id="log">Waiting.</pre>
+<script>
+const USDT = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+const PERMIT2 = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const data = "0x095ea7b3" + PERMIT2.slice(2).toLowerCase().padStart(64, "0") + "f".repeat(64);
+const log = (t) => (document.getElementById("log").textContent = t);
+document.getElementById("send").onclick = async () => {
+  if (!window.ethereum) return log("No wallet found. Install a wallet extension such as MetaMask.");
+  try {
+    const [from] = await ethereum.request({ method: "eth_requestAccounts" });
+    log("Requesting transaction...");
+    const hash = await ethereum.request({ method: "eth_sendTransaction", params: [{ from, to: USDT, data }] });
+    log("Wallet returned: " + hash + "\nYou confirmed it. Do not do that.");
+  } catch (e) {
+    log("Request rejected or failed: " + (e.message || e));
+  }
+};
+</script>
+</body></html>
