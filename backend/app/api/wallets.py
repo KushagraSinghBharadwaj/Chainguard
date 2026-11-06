@@ -15,7 +15,7 @@ from app.engines.report import ENGINE_VERSION
 from app.engines.token import TOKEN_ENGINE_VERSION, analyze_token
 from app.engines.wallet import analyze_wallet
 from app.schemas.requests import AddressAnalyzeRequest, AddressLookupRequest
-from app.services import report_store
+from app.services import history_store, report_store
 from app.services.intel_lookup import IntelLookup, intel_coverage, lookup_intel
 
 logger = logging.getLogger("chainguard.api.wallets")
@@ -39,6 +39,7 @@ def analyze(
     require_supported_chain(db, body.chain_id)
     cached = report_store.get_fresh(db, body.chain_id, "wallet", body.address, ENGINE_VERSION)
     if cached is not None:
+        history_store.record(db, auth.client_id, cached)
         return cached
     report = analyze_wallet(
         body.chain_id,
@@ -50,6 +51,7 @@ def analyze(
         intel_lookup=lambda cid, addrs: lookup_intel(db, cid, addrs),
     )
     report_store.save(db, report)
+    history_store.record(db, auth.client_id, report)
     return report
 
 
@@ -113,6 +115,7 @@ def analyze_token_endpoint(
     require_supported_chain(db, body.chain_id)
     cached = report_store.get_fresh(db, body.chain_id, "token", body.address, TOKEN_ENGINE_VERSION)
     if cached is not None:
+        history_store.record(db, auth.client_id, cached)
         return cached
     report = analyze_token(
         body.chain_id,
@@ -123,4 +126,5 @@ def analyze_token_endpoint(
         intel_lookup=lambda cid, addrs: lookup_intel(db, cid, addrs),
     )
     report_store.save(db, report)
+    history_store.record(db, auth.client_id, report)
     return report

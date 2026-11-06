@@ -11,6 +11,8 @@ from app.api.providers_dep import Providers, get_providers
 from app.api.wallets import require_supported_chain
 from app.db.session import get_db
 from app.engines.tx import analyze_transaction
+from app.api.history import router as history_router
+from app.services import history_store
 from app.services.intel_lookup import lookup_intel
 
 router = APIRouter(prefix="/v1", tags=["analysis"])
@@ -30,8 +32,13 @@ def analyze_tx_endpoint(
     providers: Providers = Depends(get_providers),
 ) -> dict[str, Any]:
     require_supported_chain(db, body.chain_id)
-    return analyze_transaction(
+    report = analyze_transaction(
         body.chain_id, body.to, body.data,
         rpc=providers.rpc, explorer=providers.explorer, goplus=providers.goplus,
         intel_lookup=lambda cid, addrs: lookup_intel(db, cid, addrs),
     )
+    history_store.record(db, auth.client_id, report)
+    return report
+
+
+router.include_router(history_router)

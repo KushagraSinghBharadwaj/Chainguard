@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.clientip import client_ip
 from app.core.config import get_settings
 from app.core.errors import ApiError
+from app.core.pg_ratelimit import PgTokenBucket
 from app.core.ratelimit import TokenBucket
 from app.core.security import hash_token
 from app.db.models import Client, ClientToken
@@ -21,7 +22,8 @@ bearer_scheme = HTTPBearer(auto_error=False)
 _settings = get_settings()
 
 # Limits for all authenticated /v1 routes. Registration has its own limiter in clients.py.
-token_limiter = TokenBucket(
+token_limiter = PgTokenBucket(
+    name="token",
     capacity=_settings.rate_limit_token_burst,
     refill_per_second=_settings.rate_limit_token_per_minute / 60,
 )

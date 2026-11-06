@@ -19,9 +19,10 @@
     <button class="tab active" role="tab" data-mode="wallets">Wallet</button>
     <button class="tab" role="tab" data-mode="tokens">Token</button>
     <button class="tab" role="tab" data-mode="transactions">Transaction</button>
+    <button class="tab" role="tab" data-mode="history">History</button>
   </div>
 
-  <section class="card">
+  <section class="card" id="form">
     <label for="addr" id="addrLabel">Wallet address</label>
     <input id="addr" class="mono" spellcheck="false" autocomplete="off" placeholder="0x…">
 
@@ -37,6 +38,7 @@
     <p id="msg" class="msg" role="status"></p>
   </section>
 
+  <div id="hist" hidden></div>
   <div id="out"></div>
 
   <details class="conn" id="conn">

@@ -75,11 +75,15 @@ document.querySelectorAll(".tab").forEach((b) =>
   b.addEventListener("click", () => {
     mode = b.dataset.mode;
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === b));
+    const isHist = mode === "history";
+    $("form").hidden = isHist;
+    $("hist").hidden = !isHist;
+    $("out").replaceChildren();
+    setMsg("");
+    if (isHist) { loadHistory(); return; }
     $("addrLabel").textContent = MODES[mode].label;
     $("go").textContent = MODES[mode].button;
     $("dataRow").hidden = mode !== "transactions";
-    $("out").replaceChildren();
-    setMsg("");
   })
 );
 
@@ -198,3 +202,47 @@ $("go").addEventListener("click", async () => {
     $("go").textContent = MODES[mode].button;
   }
 });
+
+const TYPE_TAB = { wallet: "wallets", token: "tokens", transaction: "transactions" };
+const shorten = (s) => (s.length > 18 ? s.slice(0, 8) + "…" + s.slice(-6) : s);
+
+async function loadHistory() {
+  const box = $("hist");
+  const token = $("token").value.trim();
+  if (!token) {
+    $("conn").open = true;
+    return box.replaceChildren(el("p", "msg err", "Add a client token under Connection first."));
+  }
+  box.replaceChildren(el("p", "msg", "Loading history…"));
+  try {
+    const res = await fetch(API + "history?limit=20", { headers: { Authorization: "Bearer " + token } });
+    if (!res.ok) {
+      const t = res.status === 401 ? "Token rejected. Create a new token under Connection." : "Could not load history (" + res.status + ").";
+      return box.replaceChildren(el("p", "msg err", t));
+    }
+    const items = (await res.json()).items || [];
+    if (!items.length) {
+      return box.replaceChildren(el("p", "msg", "No checks yet. Analyze a wallet, token or transaction and it will appear here."));
+    }
+    const list = el("div", "hlist");
+    items.forEach((i) => {
+      const row = el("button", "hrow");
+      row.type = "button";
+      const lvl = String(i.risk_level || "").toUpperCase();
+      const mid = el("span", "hmid");
+      mid.append(el("b", "", i.subject_type), el("span", "mono", shorten(String(i.subject_key))));
+      row.append(el("span", "chip " + lvl.toLowerCase(), lvl.replace(/_/g, " ")), mid,
+        el("span", "hwhen", new Date(i.created_at).toLocaleString()));
+      if (i.subject_type !== "transaction" && ADDR.test(i.subject_key)) {
+        row.addEventListener("click", () => {
+          document.querySelector('.tab[data-mode="' + TYPE_TAB[i.subject_type] + '"]').click();
+          $("addr").value = i.subject_key;
+        });
+      }
+      list.append(row);
+    });
+    box.replaceChildren(list);
+  } catch (e) {
+    box.replaceChildren(el("p", "msg err", "Could not reach the backend. Start it on port 8000."));
+  }
+}
