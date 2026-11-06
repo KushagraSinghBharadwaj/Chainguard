@@ -1,3 +1,4 @@
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 import time
 import uuid
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(OperationalError, database_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
+    app.add_middleware(CORSMiddleware, allow_origin_regex=r'^chrome-extension://[a-z]{32}$', allow_methods=['GET','POST'], allow_headers=['Authorization','Content-Type'])
     app.include_router(health_router)
     app.include_router(wallets_router)
     app.include_router(transactions_router)

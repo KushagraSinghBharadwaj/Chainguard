@@ -26,3 +26,5 @@ ml/data/*
 .DS_Store
 Thumbs.db
 backend/data/
+backend/ml_reports/*.joblib
+backend/collect_log.txt
