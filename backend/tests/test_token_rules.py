@@ -106,3 +106,27 @@ def test_privilege_evidence_from_abi():
 
 def test_unverified_gives_nothing():
     assert privilege_evidence(_sec([], verified=False), _SKIP) == []
+
+
+from app.engines.token_rules import owner_evidence
+from app.providers.base import ProviderResult
+
+
+def _owner_res(word, reverted=False):
+    out = SimpleNamespace(reverted=reverted, return_data=word)
+    return ProviderResult("ok", "alchemy", out, None, datetime.now(timezone.utc))
+
+
+def test_owner_renounced():
+    ev = owner_evidence(_owner_res("0x" + "0" * 64))
+    assert [e.id for e in ev] == ["contract.owner.renounced"]
+
+
+def test_owner_set():
+    ev = owner_evidence(_owner_res("0x" + "0" * 24 + "ab" * 20))
+    assert [e.id for e in ev] == ["contract.owner.set"]
+
+
+def test_owner_revert_or_none():
+    assert owner_evidence(_owner_res("0x", reverted=True)) == []
+    assert owner_evidence(None) == []

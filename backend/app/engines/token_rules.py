@@ -4,7 +4,10 @@ GoPlus is a third party, so its flags are never marked verified. Thresholds are 
 guesses, not measured. A missing field produces no evidence: unknown is not False.
 """
 
+import re
 from typing import Any
+
+from app.core.addresses import normalize_address
 
 from app.engines.evidence import Evidence
 from app.providers.base import ProviderResult
@@ -118,3 +121,32 @@ def privilege_evidence(source_sec: Section, impl_sec: Section) -> list[Evidence]
             source=sec.source or "explorer", fetched_at=sec.fetched_at,
         ))
     return out
+
+
+_OWNER_WORD = re.compile(r"0x[0-9a-fA-F]{64}")
+
+
+def owner_evidence(res) -> list[Evidence]:
+    """owner() read on-chain. A zero address means renounced. Reverts and bad shapes give nothing."""
+    if res is None or res.status != "ok" or res.data is None or res.data.reverted:
+        return []
+    word = res.data.return_data
+    if not isinstance(word, str) or not _OWNER_WORD.fullmatch(word):
+        return []
+    body = word[2:].lower()
+    if body[:24] != "0" * 24:
+        return []
+    if int(body, 16) == 0:
+        return [Evidence(
+            id="contract.owner.renounced", kind="rule",
+            claim="owner() returns the zero address, so ownership looks renounced. Other admin roles may still exist.",
+            severity="info", confidence=1.0, verified=True, data={},
+            source=res.provider, fetched_at=res.fetched_at,
+        )]
+    owner = normalize_address("0x" + body[24:])
+    return [Evidence(
+        id="contract.owner.set", kind="rule",
+        claim="owner() returns an active owner address. Whoever controls it can use the owner-only functions.",
+        severity="info", confidence=1.0, verified=True, data={"owner": owner},
+        source=res.provider, fetched_at=res.fetched_at,
+    )]
