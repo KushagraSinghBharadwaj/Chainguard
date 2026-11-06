@@ -80,3 +80,29 @@ def test_proxy_disagreement_is_moderate():
 def test_no_pattern_or_unknown_gives_nothing():
     assert tr.proxy_evidence(_proxy("no_known_pattern_found", ())) == []
     assert tr.proxy_evidence(_proxy("unknown", ())) == []
+
+
+import json
+from datetime import datetime, timezone
+from types import SimpleNamespace
+
+from app.engines.token_rules import privilege_evidence
+from app.services.contract_data import Section
+
+
+def _sec(abi, verified=True):
+    d = SimpleNamespace(verified=verified, abi_json=json.dumps(abi))
+    return Section("verified_source", "ok", d, None, "etherscan", datetime.now(timezone.utc))
+
+
+_SKIP = Section("implementation_source", "skipped", None, None, None, None)
+
+
+def test_privilege_evidence_from_abi():
+    abi = [{"type": "function", "name": "pause"}, {"type": "function", "name": "mint"}]
+    ids = {e.id for e in privilege_evidence(_sec(abi), _SKIP)}
+    assert ids == {"contract.privilege.pause", "contract.privilege.mint"}
+
+
+def test_unverified_gives_nothing():
+    assert privilege_evidence(_sec([], verified=False), _SKIP) == []

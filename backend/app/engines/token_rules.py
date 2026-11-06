@@ -80,3 +80,41 @@ def proxy_evidence(sec: Section) -> list[Evidence]:
             source=source, fetched_at=sec.fetched_at,
         ))
     return out
+
+
+import json
+
+from app.engines.token_privileges import analyze_privileges
+
+
+def _parse_abi(source):
+    if source is None or not getattr(source, "abi_json", None):
+        return None
+    try:
+        abi = json.loads(source.abi_json)
+    except (ValueError, TypeError):
+        return None
+    return abi if isinstance(abi, list) else None
+
+
+def privilege_evidence(source_sec: Section, impl_sec: Section) -> list[Evidence]:
+    """Facts from the verified ABI. Prefers the implementation ABI for proxies."""
+    sec = impl_sec if impl_sec.status == "ok" and impl_sec.data is not None else source_sec
+    if sec.status != "ok" or sec.data is None or not sec.data.verified:
+        return []
+    abi = _parse_abi(sec.data)
+    if not abi:
+        return []
+    out: list[Evidence] = []
+    for f in analyze_privileges(abi):
+        if f["category"] == "owner_getter" or not f["functions"]:
+            continue
+        out.append(Evidence(
+            id=f"contract.privilege.{f['category']}", kind="rule",
+            claim=(f"Verified ABI exposes {f['category']} functions: "
+                   + ", ".join(f["functions"]) + ". Presence is a fact, not proof of misuse."),
+            severity="info", confidence=1.0, verified=True,
+            data={"functions": f["functions"]},
+            source=sec.source or "explorer", fetched_at=sec.fetched_at,
+        ))
+    return out
