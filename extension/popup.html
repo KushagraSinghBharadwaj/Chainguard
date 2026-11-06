@@ -1,19 +1,53 @@
-﻿<!doctype html>
-<html><head><meta charset="utf-8"><title>ChainGuard</title>
-<style>
-body{font:13px system-ui;width:360px;margin:10px}
-input,select,button{width:100%;box-sizing:border-box;margin:3px 0;padding:6px}
-.lvl{font-weight:bold;font-size:15px;margin:8px 0}
-.sev{font-size:11px;color:#555}
-ul{padding-left:16px}
-small{color:#666}
-</style></head>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ChainGuard</title>
+<link rel="stylesheet" href="popup.css">
+</head>
 <body>
-<h3>ChainGuard</h3>
-<input id="token" type="password" placeholder="Client token (stored locally)">
-<input id="addr" placeholder="0x address">
-<select id="kind"><option value="wallets">Wallet</option><option value="tokens">Token</option></select>
-<button id="go">Analyze</button>
-<div id="out"></div>
+<header class="top">
+  <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 5.6v5.7c0 4.7 3.1 8.4 7.5 10.2 4.4-1.8 7.5-5.5 7.5-10.2V5.6L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m8.6 12.2 2.4 2.4 4.4-4.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div>
+    <h1>ChainGuard</h1>
+    <p>Read-only screening for wallets, tokens and transactions</p>
+  </div>
+</header>
+
+<main>
+  <div class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-mode="wallets">Wallet</button>
+    <button class="tab" role="tab" data-mode="tokens">Token</button>
+    <button class="tab" role="tab" data-mode="transactions">Transaction</button>
+  </div>
+
+  <section class="card">
+    <label for="addr" id="addrLabel">Wallet address</label>
+    <input id="addr" class="mono" spellcheck="false" autocomplete="off" placeholder="0x…">
+
+    <div id="dataRow" hidden>
+      <label for="calldata">Calldata</label>
+      <textarea id="calldata" class="mono" spellcheck="false" rows="3" placeholder="0x095ea7b3…"></textarea>
+    </div>
+
+    <div class="actions">
+      <button id="go" class="primary">Analyze wallet</button>
+      <button id="sample" class="ghost" type="button">Load real example</button>
+    </div>
+    <p id="msg" class="msg" role="status"></p>
+  </section>
+
+  <div id="out"></div>
+
+  <details class="conn" id="conn">
+    <summary>Connection <span id="connState" class="pill">No token</span></summary>
+    <div class="connBody">
+      <label for="token">Client token (stored in this browser only)</label>
+      <input id="token" type="password" class="mono" autocomplete="off" placeholder="Paste a token or create one">
+      <button id="register" class="ghost" type="button">Create a new token</button>
+    </div>
+  </details>
+</main>
 <script src="popup.js"></script>
-</body></html>
+</body>
+</html>
