@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 
 from app.api.clients import router as clients_router
 from app.api.health import router as health_router
+from app.api.transactions import router as transactions_router
 from app.api.wallets import router as wallets_router
 from app.core.errors import ApiError, api_error_handler, database_error_handler, validation_error_handler
 from app.core.config import get_settings
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.include_router(health_router)
     app.include_router(wallets_router)
+    app.include_router(transactions_router)
     app.include_router(clients_router)
     return app
 
