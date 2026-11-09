@@ -5,6 +5,7 @@ import uuid
 
 from fastapi import FastAPI, Request
 
+from app.api.history import router as history_router
 from app.api.clients import router as clients_router
 from app.api.health import router as health_router
 from app.api.transactions import router as transactions_router
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(wallets_router)
     app.include_router(transactions_router)
     app.include_router(clients_router)
+    app.include_router(history_router)
     return app
 
 
