@@ -160,3 +160,28 @@ def test_real_ofac_address_is_critical_and_listed_in_lookup(client, auth_headers
         assert any(e["id"].startswith("intel.ofac_sdn") for e in report["evidence"])
     finally:
         _clean(addr)
+
+
+FAKE_EXPLANATION = {"text": "Test wording.", "model": "fake", "source": "local-llm", "validated": True}
+
+
+def test_explanation_is_attached_and_cached(client, auth_headers, monkeypatch):
+    monkeypatch.setattr("app.api.wallets.generate_explanation_sync", lambda report: FAKE_EXPLANATION)
+    body = {"chain_id": 1, "address": SUBJECT}
+    first = client.post("/v1/wallets/analyze", json=body, headers=auth_headers).json()
+    assert first["explanation"] == FAKE_EXPLANATION
+    second = client.post("/v1/wallets/analyze", json=body, headers=auth_headers).json()
+    assert second["report_id"] == first["report_id"]
+    assert second["explanation"] == FAKE_EXPLANATION
+
+
+def test_explanation_never_changes_the_risk_level(client, auth_headers, monkeypatch):
+    body = {"chain_id": 1, "address": SUBJECT}
+    monkeypatch.setattr("app.api.wallets.generate_explanation_sync", lambda report: None)
+    without = client.post("/v1/wallets/analyze", json=body, headers=auth_headers).json()
+    assert "explanation" not in without
+    _clean(SUBJECT)
+    monkeypatch.setattr("app.api.wallets.generate_explanation_sync", lambda report: FAKE_EXPLANATION)
+    with_llm = client.post("/v1/wallets/analyze", json=body, headers=auth_headers).json()
+    assert with_llm["risk_level"] == without["risk_level"]
+    assert with_llm["summary"] == without["summary"]

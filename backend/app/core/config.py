@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     # Only set true behind a reverse proxy you control; otherwise X-Forwarded-For is spoofable.
     trust_proxy_headers: bool = False
 
+    # Optional local LLM (Ollama). It only rephrases the engine summary and never changes a level.
+    llm_enabled: bool = False
+    ollama_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "llama3.2:3b"
+    llm_timeout_seconds: float = Field(default=20.0, gt=0)
+
 
 @lru_cache
 def get_settings() -> Settings:

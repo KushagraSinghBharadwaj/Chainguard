@@ -16,6 +16,7 @@ from app.engines.token import TOKEN_ENGINE_VERSION, analyze_token
 from app.engines.wallet import analyze_wallet
 from app.schemas.requests import AddressAnalyzeRequest, AddressLookupRequest
 from app.services import history_store, report_store
+from app.services.ollama_client import generate_explanation_sync
 from app.services.intel_lookup import IntelLookup, intel_coverage, lookup_intel
 
 logger = logging.getLogger("chainguard.api.wallets")
@@ -50,6 +51,9 @@ def analyze(
         goplus=providers.goplus,
         intel_lookup=lambda cid, addrs: lookup_intel(db, cid, addrs),
     )
+    explanation = generate_explanation_sync(report)
+    if explanation is not None:
+        report["explanation"] = explanation
     report_store.save(db, report)
     history_store.record(db, auth.client_id, report)
     return report
@@ -125,6 +129,9 @@ def analyze_token_endpoint(
         goplus=providers.goplus,
         intel_lookup=lambda cid, addrs: lookup_intel(db, cid, addrs),
     )
+    explanation = generate_explanation_sync(report)
+    if explanation is not None:
+        report["explanation"] = explanation
     report_store.save(db, report)
     history_store.record(db, auth.client_id, report)
     return report
