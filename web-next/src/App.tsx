@@ -14,6 +14,9 @@ import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import About from "./pages/About";
 import Docs from "./pages/Docs";
+import Wallet from "./pages/Wallet";
+import { WalletProvider } from "./wallet/WalletContext";
+import WalletChip from "./wallet/WalletChip";
 import Interactions from "./components/layout/Interactions";
 
 function Shell() {
@@ -34,6 +37,7 @@ function Shell() {
           <Route path="/history" element={<History />} />
           <Route path="/about" element={<About />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/wallet" element={<Wallet />} />
           <Route path="/extension" element={<Stub title="Install the extension" note="Later step." />} />
           <Route path="*" element={<Stub title="Not found" note="That page does not exist." />} />
         </Routes>
@@ -43,5 +47,5 @@ function Shell() {
   );
 }
 export default function App() {
-  return <BrowserRouter><SmoothScroll /><Interactions /><Shell /></BrowserRouter>;
+  return <BrowserRouter><WalletProvider><SmoothScroll /><Interactions /><Shell /><WalletChip /></WalletProvider></BrowserRouter>;
 }

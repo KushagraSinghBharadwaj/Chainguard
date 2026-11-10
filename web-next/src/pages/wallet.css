@@ -1,0 +1,28 @@
+.wal-chip { position: fixed; right: 20px; bottom: 20px; z-index: 60; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(17,20,38,.85); backdrop-filter: blur(12px); color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none;
+  box-shadow: 0 14px 40px -14px rgba(135,87,255,.6); transition: transform .35s var(--ease), border-color .3s, box-shadow .3s; }
+.wal-chip:hover { transform: translateY(-3px); border-color: rgba(112,231,255,.55); box-shadow: 0 20px 50px -12px rgba(112,231,255,.5); }
+.wal-chip img { border-radius: 5px; }
+.wal-short { font-family: var(--mono); }
+.wal-net { color: var(--muted); font-weight: 500; font-size: 12px; }
+.wal-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); animation: walping 2s infinite; }
+.wal-dot.off { background: var(--amber); animation: none; }
+@keyframes walping { 0% { box-shadow: 0 0 0 0 rgba(55,214,160,.6); } 70% { box-shadow: 0 0 0 8px rgba(55,214,160,0); } 100% { box-shadow: 0 0 0 0 rgba(55,214,160,0); } }
+
+.wal-list { display: grid; gap: 12px; }
+.wal-item { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.04);
+  transition: transform .35s var(--ease), border-color .3s, box-shadow .3s; }
+.wal-item:hover { transform: translateY(-3px); border-color: rgba(135,87,255,.55); box-shadow: 0 24px 50px -26px rgba(135,87,255,.6); }
+.wal-icon { width: 40px; height: 40px; border-radius: 10px; flex: none; object-fit: cover; background: rgba(255,255,255,.06); display: inline-block; }
+.wal-icon.sm { width: 24px; height: 24px; border-radius: 6px; vertical-align: middle; margin-right: 8px; }
+.wal-name { flex: 1; font-weight: 700; }
+.wal-name small { display: block; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+.wal-card { padding: 26px; display: grid; gap: 16px; }
+.wal-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: center; }
+.wal-row .k { color: var(--muted); font-size: 13px; }
+.wal-addr { font-family: var(--mono); word-break: break-all; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.wal-warn { display: block; margin-top: 8px; padding: 10px 12px; border-radius: 12px; font-size: 13px; color: #ffd9a0; border: 1px solid rgba(255,189,89,.4); background: rgba(255,189,89,.08); }
+.wal-err { color: var(--red); margin: 12px 0 0; }
+.wal-note { margin-top: 18px; font-size: 13px; max-width: 760px; }
+@media (max-width: 600px) { .wal-row { grid-template-columns: 1fr; gap: 4px; } .wal-chip { right: 12px; bottom: 12px; } }
+@media (prefers-reduced-motion: reduce) { .wal-dot, .wal-chip, .wal-item { animation: none; transition: none; } }

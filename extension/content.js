@@ -1,5 +1,5 @@
 // Website address used by the "open on website" links. Change this when the site is deployed.
-const SITE = "http://localhost:5173";
+const SITE = "http://localhost:5174";
 const ADDR = /^0x[0-9a-fA-F]{40}$/;
 const DATA = /^0x([0-9a-fA-F]{2})*$/;
 const LEVELS = ["LOW", "MODERATE", "HIGH", "CRITICAL"];

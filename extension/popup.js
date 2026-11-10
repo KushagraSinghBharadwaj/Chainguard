@@ -1,5 +1,5 @@
 // Website address used by the "open on website" links. Change this when the site is deployed.
-const SITE = "http://localhost:5173";
+const SITE = "http://localhost:5174";
 const API = "http://127.0.0.1:8000/v1/";
 const $ = (id) => document.getElementById(id);
 const ADDR = /^0x[0-9a-fA-F]{40}$/;
