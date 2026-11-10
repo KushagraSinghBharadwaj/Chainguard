@@ -1,0 +1,13 @@
+:root {
+  --bg: #05060a; --navy: #090b16; --surface: #111426;
+  --violet: #8757ff; --blue: #42b8ff; --cyan: #70e7ff;
+  --green: #37d6a0; --amber: #ffbd59; --red: #ff526b;
+  --text: #eef0fa; --muted: #98a0ba; --line: rgba(255,255,255,.09);
+  --lvl-low: #4fe3c1; --lvl-moderate: #ffbd59; --lvl-high: #ff7a45;
+  --lvl-critical: #ff526b; --lvl-insufficient: #8b92a8;
+  --ease: cubic-bezier(.22,1,.36,1);
+  --dur-fast: .18s; --dur: .45s; --dur-slow: .9s;
+  --radius: 20px; --radius-sm: 12px;
+  --font: "Inter Variable", "Inter", "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+}

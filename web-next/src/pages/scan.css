@@ -1,0 +1,19 @@
+.scan { padding-block: 56px 100px; } .scan h1 { font-size: clamp(34px, 4.6vw, 56px); margin-bottom: 10px; }
+.tabs { display: flex; gap: 6px; padding: 5px; border-radius: 999px; width: fit-content; max-width: 100%; margin: 26px 0; overflow-x: auto; }
+.tabs a { padding: 9px 18px; border-radius: 999px; font-size: 14px; color: var(--muted); white-space: nowrap; transition: background var(--dur-fast), color var(--dur-fast); }
+.tabs a:hover { color: var(--text); } .tabs a.active { background: rgba(135,87,255,.28); color: var(--text); }
+.panel { padding: 28px; display: grid; gap: 16px; } .field { display: grid; gap: 8px; } .field label { font-size: 13px; color: var(--muted); }
+.field input, .field textarea { width: 100%; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: rgba(0,0,0,.35); color: var(--text); font-size: 15px; resize: vertical; }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(66,184,255,.18); }
+.err { color: var(--red); margin: 0; min-height: 1.2em; font-size: 14px; } .err.box { margin-top: 16px; } .row { display: flex; gap: 12px; }
+.btn:disabled { opacity: .55; cursor: progress; transform: none; } .notice { color: var(--amber); font-size: 14px; }
+
+.tl-box { padding: 22px 26px; margin-top: 22px; } .tl-head { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
+.src { font-size: 12px; color: var(--muted); } .src.live { color: var(--green); }
+.tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tl li { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; animation: rise .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 50ms); }
+.tl li em { color: var(--muted); font-style: normal; } .ico { text-align: center; }
+.tl .st-completed .ico { color: var(--green); } .tl .st-partial .ico { color: var(--amber); } .tl .st-failed .ico, .tl .st-error .ico { color: var(--red); }
+.tl .st-running .ico { color: var(--cyan); animation: pulse 1.2s ease-in-out infinite; } .tl .st-skipped, .tl .st-pending { color: var(--muted); }
+.logbox { margin-top: 12px; color: var(--muted); font-size: 13px; } .logbox pre { background: rgba(0,0,0,.35); padding: 12px; border-radius: var(--radius-sm); overflow: auto; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } } @keyframes pulse { 50% { opacity: .3; } }

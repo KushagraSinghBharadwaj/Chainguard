@@ -1,0 +1,18 @@
+.dash { padding-block: 56px 100px; } .dash h1 { font-size: clamp(34px, 4.6vw, 56px); margin-bottom: 10px; }
+.small, .sm { font-size: 13px; } .err.box { color: var(--red); margin-top: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 28px 0 8px; }
+.tile { padding: 22px; display: grid; gap: 6px; animation: rise .5s var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
+.tile b { font-size: 40px; letter-spacing: -.03em; }
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; } .pad { padding: 22px 26px; } .dgrid h3 { font-size: 20px; margin-bottom: 14px; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bars li { display: grid; grid-template-columns: 110px 1fr 32px; gap: 12px; align-items: center; font-size: 14px; } .bars b { text-align: right; }
+.track { height: 10px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; } .fill { height: 100%; border-radius: 999px; transition: width var(--dur-slow) var(--ease); }
+.recent { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 12px; } .recent li { display: grid; gap: 4px; }
+.filters { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; padding: 20px; margin: 26px 0 22px; }
+.filters select, .filters input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: rgba(0,0,0,.35); color: var(--text); font-size: 14px; }
+.timeline { list-style: none; margin: 0; padding: 0 0 0 18px; display: grid; gap: 14px; border-left: 1px solid var(--line); }
+.item { padding: 18px 22px; display: grid; gap: 8px; position: relative; animation: rise .45s var(--ease) both; }
+.item::before { content: ""; position: absolute; left: -24px; top: 26px; width: 10px; height: 10px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 12px var(--violet); }
+.item .top { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; } .item .key { margin: 0; font-size: 14px; } .item p { margin: 0; } .acts { margin-top: 4px; }
+@media (max-width: 900px) { .tiles { grid-template-columns: 1fr 1fr; } .dgrid, .filters { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .tiles { grid-template-columns: 1fr; } .bars li { grid-template-columns: 90px 1fr 28px; } }
