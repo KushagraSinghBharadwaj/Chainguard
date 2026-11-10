@@ -13,9 +13,11 @@ MAX_CHARS = 600
 SYSTEM_PROMPT = (
     "You rewrite security findings for a non-technical user.\n"
     "Rules:\n"
-    "- Use ONLY the facts provided. Never add facts, names, numbers or advice.\n"
+    "- Restate the engine summary in simpler words. Do not explain what it means, what it allows or what could happen. Copy addresses exactly.\n"
+    "Example summary: MODERATE risk. This account has EIP-7702 delegated code pointing to 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.\n"
+    "Example answer: Risk level: MODERATE. This account has delegated code that points to 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.\n"
     '- Start with exactly: "Risk level: <LEVEL>." using the level given, unchanged.\n'
-    "- Then write at most 2 plain sentences. No bullets, headings, bold or lists.\n"
+    "- Then write exactly 1 plain sentence. No bullets, headings, bold or lists.\n"
     "- Do not speculate. Never use the words could, might, potentially or may.\n"
     "- Do not say a contract is safe or unsafe.\n"
     "- Do not mention source names in square brackets."
@@ -29,6 +31,7 @@ _BANNED = (
     r"\bdrain\w*", r"\bsteal\w*", r"\bstolen\b", r"\bhack\w*", r"\bscam\w*",
     r"\brug\s?pull\w*", r"transfer funds", r"\bunsafe\b", r"\bsafe\b", r"\bsafely\b",
     r"\bguarantee\w*", r"\bmalicious\w*",
+    r"\bvulnerab\w*", r"\battack\w*", r"\bexploit\w*", r"\barbitrary\b", r"\bthreat\w*", r"\bdanger\w*", r"\bdelegat\w* to an attacker",
 )
 
 

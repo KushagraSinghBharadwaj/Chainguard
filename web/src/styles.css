@@ -43,3 +43,7 @@ h3::before{content:"// ";color:var(--c)}
 .status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--blue);color:#fff;padding:4px 14px;font-size:12px;margin-top:20px;border-radius:3px}
 @media (prefers-reduced-motion:reduce){.st.running{animation:none}}
 @media (max-width:600px){.act{padding-left:18px}.err{margin-left:18px}.ln{display:none}}
+
+.explain { margin: 12px 0; padding: 10px 14px; border-left: 3px solid #3b82f6; background: rgba(59,130,246,0.08); }
+.explain-label { font-size: 12px; opacity: 0.7; margin-bottom: 4px; }
+.explain p { margin: 0; }

@@ -134,6 +134,12 @@ function Report({ r }: { r: any }) {
       <div className="pane">PROBLEMS</div>
       <div className={"lvl " + r.risk_level}>{r.risk_level.replace("_", " ")}</div>
       <p className="sum">{r.summary}</p>
+        {r.explanation?.text && (
+          <div className="explain">
+            <div className="explain-label">plain-language summary · rewritten by a local model ({r.explanation.model}) · the engine summary above is authoritative</div>
+            <p>{r.explanation.text}</p>
+          </div>
+        )}
 
       <h3>evidence ({r.evidence.length})</h3>
       {r.evidence.length === 0 && <p className="muted">No findings in the checks that completed.</p>}
