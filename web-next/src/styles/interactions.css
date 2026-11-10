@@ -1,0 +1,51 @@
+/* ---- ambient cursor glow ---- */
+body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 30%), rgba(135,87,255,.13), transparent 70%); }
+
+/* ---- logo that looks at the cursor ---- */
+.logomark { display: inline-flex; perspective: 260px; --amp: .55; }
+.logo:hover .logomark { --amp: 1; }
+.logomark svg { display: block; transform-style: preserve-3d;
+  transform: translate(calc(var(--lx, 0) * var(--amp) * 3px), calc(var(--ly, 0) * var(--amp) * 3px))
+             rotateY(calc(var(--lx, 0) * var(--amp) * 38deg)) rotateX(calc(var(--ly, 0) * var(--amp) * -38deg));
+  transition: transform .14s linear, scale .35s var(--ease), filter .35s; filter: drop-shadow(0 4px 14px rgba(135,87,255,.55)); }
+.logo:hover .logomark svg { scale: 1.2; filter: drop-shadow(0 6px 22px rgba(112,231,255,.85)); }
+.logomark .core { transform: translate(calc(var(--lx, 0) * var(--amp) * 18px), calc(var(--ly, 0) * var(--amp) * 18px)); transition: transform .14s linear; }
+
+/* ---- hero shield tilts toward the cursor ---- */
+body .shield.layer { transform-style: preserve-3d;
+  transform: translate3d(calc(var(--px, 0) * var(--d) * 1px), calc(var(--py, 0) * var(--d) * 1px), 0)
+             rotateY(calc(var(--px, 0) * 22deg)) rotateX(calc(var(--py, 0) * -22deg)); }
+
+/* ---- buttons: magnetic, spotlight, ripple, press ---- */
+.btn { position: relative; overflow: hidden; transform: translate(var(--tx, 0px), var(--ty, 0px));
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .3s, scale .15s var(--ease); }
+.btn:hover { --g: 1; transform: translate(var(--tx, 0px), calc(var(--ty, 0px) - 2px)); }
+.btn:active { scale: .95; }
+.btn.primary { background: radial-gradient(130px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,calc(var(--g, 0) * .35)), transparent 65%), linear-gradient(135deg, #9a72ff, #5e8bff); }
+.btn.primary:hover { box-shadow: 0 16px 50px -8px rgba(135,87,255,.9); }
+.btn.ghost { background: radial-gradient(130px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,calc(var(--g, 0) * .16)), transparent 65%), rgba(255,255,255,.04); }
+.btn.ghost:hover { border-color: rgba(112,231,255,.55); }
+.ripple { position: absolute; border-radius: 50%; pointer-events: none; background: rgba(255,255,255,.35);
+  transform: translate(-50%, -50%) scale(0); animation: ripple .65s var(--ease) forwards; }
+@keyframes ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+/* ---- cards: tilt + spotlight ---- */
+body :is(.card, .tile, .steps li, .item, .abt-card, .doc-step, .rep-row) { position: relative; }
+body :is(.card, .tile, .steps li, .abt-card, .doc-step) {
+  transform: perspective(900px) translateY(var(--lift, 0px)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .3s var(--ease), border-color .3s, box-shadow .3s; }
+body :is(.card, .tile, .steps li, .abt-card, .doc-step):hover { --lift: -6px; border-color: rgba(135,87,255,.5);
+  box-shadow: 0 40px 70px -30px rgba(135,87,255,.45), inset 0 1px 0 rgba(255,255,255,.1); }
+body :is(.card, .tile, .steps li, .item, .abt-card, .doc-step, .rep-row)::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(112,231,255,.10), rgba(135,87,255,.06) 45%, transparent 70%); }
+body :is(.card, .tile, .steps li, .item, .abt-card, .doc-step, .rep-row):hover::after { opacity: 1; }
+.ev { transition: border-color .3s; } .ev:hover { border-color: rgba(135,87,255,.4); }
+
+/* ---- nav + tabs ---- */
+.links a, .tabs a { position: relative; overflow: hidden; }
+.links a::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 0; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--violet), var(--cyan)); transition: width .35s var(--ease), left .35s var(--ease); }
+.links a:hover::after, .links a.active::after { width: 40%; left: 30%; }
+.links a:active, .tabs a:active { scale: .95; }
+.acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }

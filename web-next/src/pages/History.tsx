@@ -4,6 +4,7 @@ import { listHistory } from "../services/history";
 import { getReport } from "../services/reportCache";
 import { ApiError } from "../services/http";
 import RiskBadge from "../components/report/RiskBadge";
+import DownloadPdfButton from "../components/report/DownloadPdfButton";
 import type { HistoryItem } from "../types/report";
 import "./dashboard.css";
 
@@ -53,7 +54,7 @@ export default function History() {
               <p className="mono key">{i.subject_key}</p>
               <p className="muted sm">{i.summary}</p>
               <div className="acts">
-                {cached ? <Link className="btn ghost sm" to={"/report/" + i.report_id}>Open report</Link>
+                {cached ? <><Link className="btn ghost sm" to={"/report/" + i.report_id}>Open report</Link><DownloadPdfButton report={getReport(i.report_id)!} small label="Download PDF" /></>
                   : i.subject_type !== "transaction" ? <Link className="btn ghost sm" to={"/scan/" + i.subject_type + "?address=" + i.subject_key}>Re-run (fills the form)</Link>
                   : <span className="muted sm">Calldata is not stored, so this check cannot be re-run.</span>}
               </div>

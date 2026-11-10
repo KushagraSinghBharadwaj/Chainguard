@@ -1,5 +1,6 @@
 import type { Report, RiskLevel } from "../../types/report";
 import RiskBadge, { LEVEL_NOTE } from "./RiskBadge";
+import DownloadPdfButton from "./DownloadPdfButton";
 import "./report.css";
 
 export const fmt = (s: string) => { const d = new Date(s); return isNaN(+d) ? s : d.toLocaleString(); };
@@ -14,6 +15,7 @@ export default function ReportView({ r }: { r: Report }) {
         <RiskBadge level={level} />
         <p className="sum">{r.summary}</p>
         <p className="note">{LEVEL_NOTE[level]}</p>
+        <div className="dl-row"><DownloadPdfButton report={r} /></div>
         <dl className="meta">
           <div><dt>Subject</dt><dd className="mono">{r.subject?.key}</dd></div>
           <div><dt>Type</dt><dd>{r.detected_address_type ? r.subject?.type + " (" + r.detected_address_type + ")" : r.subject?.type}</dd></div>

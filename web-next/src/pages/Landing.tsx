@@ -27,7 +27,7 @@ export default function Landing() {
     if (prefersReduced() || !root.current) return;
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) =>
-        gsap.from(el, { y: 36, opacity: 0, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%", once: true } }));
+        gsap.from(el, { y: 36, opacity: 0, duration: 0.9, ease: "power3.out", clearProps: "transform", scrollTrigger: { trigger: el, start: "top 88%", once: true } }));
     }, root);
     return () => ctx.revert();
   }, []);
@@ -53,7 +53,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="stage" ref={stage} onPointerMove={onMove} aria-hidden="true">
+        <div className="stage" ref={stage} onPointerMove={onMove} onPointerLeave={() => { stage.current?.style.setProperty("--px", "0"); stage.current?.style.setProperty("--py", "0"); }} aria-hidden="true">
           <div className="ring r1 layer" style={d(6)} /><div className="ring r2 layer" style={d(10)} /><div className="ring r3 layer" style={d(14)} />
           <svg className="shield layer" style={d(22)} viewBox="0 0 200 220">
             <defs>
