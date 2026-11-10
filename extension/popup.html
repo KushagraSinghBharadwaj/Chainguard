@@ -2,43 +2,70 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ChainGuard</title>
 <link rel="stylesheet" href="popup.css">
 </head>
 <body>
 <header class="top">
-  <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 5.6v5.7c0 4.7 3.1 8.4 7.5 10.2 4.4-1.8 7.5-5.5 7.5-10.2V5.6L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m8.6 12.2 2.4 2.4 4.4-4.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <div>
-    <h1>ChainGuard</h1>
-    <p>Read-only screening for wallets, tokens and transactions</p>
-  </div>
+  <span class="logo" id="logo" aria-hidden="true">
+    <svg viewBox="0 0 200 210"><defs><linearGradient id="lmg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8757ff"/><stop offset="1" stop-color="#42b8ff"/></linearGradient></defs><path d="M100 10 180 40v65c0 45-35 75-80 95-45-20-80-50-80-95V40z" fill="url(#lmg)"/><circle cx="100" cy="98" r="34" fill="rgba(9,11,22,.55)"/><circle class="core" cx="100" cy="98" r="18" fill="#fff"/></svg>
+  </span>
+  <div class="brand"><h1>ChainGuard</h1><p>Read-only security screening</p></div>
+  <a class="btn ghost sm fx" data-site="/">Website &#x2197;</a>
 </header>
 
 <main>
-  <div class="tabs" role="tablist">
+  <section class="guard fx tilt" id="guard"></section>
+
+  <nav class="tabs" role="tablist">
+    <span class="ink" id="ink"></span>
     <button class="tab active" role="tab" data-mode="wallets">Wallet</button>
     <button class="tab" role="tab" data-mode="tokens">Token</button>
     <button class="tab" role="tab" data-mode="transactions">Transaction</button>
     <button class="tab" role="tab" data-mode="history">History</button>
-  </div>
+    <button class="tab" role="tab" data-mode="docs">Docs</button>
+  </nav>
 
-  <section class="card" id="form">
+  <section class="card fx tilt rise" id="form">
     <label for="addr" id="addrLabel">Wallet address</label>
-    <input id="addr" class="mono" spellcheck="false" autocomplete="off" placeholder="0x…">
+    <input id="addr" class="mono" spellcheck="false" autocomplete="off" placeholder="0x&hellip;">
 
     <div id="dataRow" hidden>
       <label for="calldata">Calldata</label>
-      <textarea id="calldata" class="mono" spellcheck="false" rows="3" placeholder="0x095ea7b3…"></textarea>
+      <textarea id="calldata" class="mono" spellcheck="false" rows="3" placeholder="0x095ea7b3&hellip;"></textarea>
     </div>
 
     <div class="actions">
-      <button id="go" class="primary">Analyze wallet</button>
-      <button id="sample" class="ghost" type="button">Load real example</button>
+      <button id="go" class="btn primary fx">Analyze wallet</button>
+      <button id="sample" class="btn ghost fx" type="button">Load real example</button>
     </div>
     <p id="msg" class="msg" role="status"></p>
   </section>
 
   <div id="hist" hidden></div>
+
+  <section id="docs" hidden>
+    <div class="card fx tilt rise" style="--i:0">
+      <h2>Download your PDF report</h2>
+      <p>PDF reports are built on the ChainGuard website from the full evidence of a scan. Run the scan there and press <b>Download PDF report</b>.</p>
+      <div class="actions">
+        <a class="btn primary fx" data-site="/scan">Scan &amp; download PDF &#x2197;</a>
+        <a class="btn ghost fx" data-site="/docs">Documentation &#x2197;</a>
+      </div>
+    </div>
+    <div class="card fx rise" style="--i:1">
+      <h2>How an analysis works</h2>
+      <details class="step fx"><summary><span class="num">1</span>Input and validation</summary><p>An address must be 0x plus 40 hex characters. Calldata must be even-length hex. Invalid input is rejected before any request is sent.</p></details>
+      <details class="step fx"><summary><span class="num">2</span>Address type detection</summary><p>The backend reads the account's bytecode to decide whether it is a wallet or a contract, then runs the matching analysis.</p></details>
+      <details class="step fx"><summary><span class="num">3</span>Data collection</summary><p>Alchemy, Etherscan, GoPlus and the stored OFAC and ScamSniffer lists are queried. Every check reports completed, partial or skipped.</p></details>
+      <details class="step fx"><summary><span class="num">4</span>Deterministic rules</summary><p>Rules turn the data into findings. Each has a severity, confidence, source and fetch time.</p></details>
+      <details class="step fx"><summary><span class="num">5</span>Risk level</summary><p>LOW, MODERATE, HIGH, CRITICAL or INSUFFICIENT DATA. Only the rules engine sets it. LOW is not a guarantee of safety.</p></details>
+      <details class="step fx"><summary><span class="num">6</span>Limitations and sources</summary><p>Every report lists what could not be checked and which sources contributed, with timestamps.</p></details>
+    </div>
+    <a class="btn ghost fx wide" data-site="/about">About ChainGuard &#x2197;</a>
+  </section>
+
   <div id="out"></div>
 
   <details class="conn" id="conn">
@@ -46,7 +73,7 @@
     <div class="connBody">
       <label for="token">Client token (stored in this browser only)</label>
       <input id="token" type="password" class="mono" autocomplete="off" placeholder="Paste a token or create one">
-      <button id="register" class="ghost" type="button">Create a new token</button>
+      <button id="register" class="btn ghost fx" type="button">Create a new token</button>
     </div>
   </details>
 </main>

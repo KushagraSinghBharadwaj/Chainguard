@@ -20,9 +20,18 @@
     p.resolve(d.decision === "reject" ? "reject" : "continue");
   });
 
+  function walletName(p, hint) {
+    if (typeof hint === "string" && hint) return hint.slice(0, 40);
+    if (p.isRabby) return "Rabby";
+    if (p.isCoinbaseWallet) return "Coinbase Wallet";
+    if (p.isBraveWallet) return "Brave Wallet";
+    if (p.isMetaMask) return "MetaMask";
+    return "Browser wallet";
+  }
+
   // If the extension does not answer within 1.5 s, the request goes to the wallet
   // untouched. ChainGuard is advisory, so it must never block a wallet by failing.
-  function screen(tx, chainId) {
+  function screen(tx, chainId, wallet) {
     return new Promise((resolve) => {
       const id = ++seq;
       const timer = setTimeout(() => {
@@ -31,13 +40,14 @@
         resolve("continue");
       }, 1500);
       pending.set(id, { resolve, timer });
-      window.postMessage({ source: "chainguard-inpage", id, tx, chainId }, window.location.origin);
+      window.postMessage({ source: "chainguard-inpage", id, tx, chainId, wallet }, window.location.origin);
     });
   }
 
-  function wrap(provider) {
+  function wrap(provider, hint) {
     if (!provider || typeof provider.request !== "function" || wrapped.has(provider)) return;
     wrapped.add(provider);
+    const wallet = walletName(provider, hint);
     const orig = provider.request.bind(provider);
     try {
       provider.request = async function (args) {
@@ -47,7 +57,8 @@
           try { chainId = parseInt(await orig({ method: "eth_chainId" }), 16); } catch (e) {}
           const decision = await screen(
             { to: tx.to, data: tx.data || tx.input || "0x", value: tx.value || "0x0" },
-            chainId
+            chainId,
+            wallet
           );
           if (decision === "reject") {
             const err = new Error("User rejected the request.");
@@ -64,10 +75,10 @@
 
   function scan() {
     wrap(window.ethereum);
-    if (window.ethereum && Array.isArray(window.ethereum.providers)) window.ethereum.providers.forEach(wrap);
+    if (window.ethereum && Array.isArray(window.ethereum.providers)) window.ethereum.providers.forEach((p) => wrap(p));
   }
 
-  window.addEventListener("eip6963:announceProvider", (e) => wrap(e.detail && e.detail.provider));
+  window.addEventListener("eip6963:announceProvider", (e) => wrap(e.detail && e.detail.provider, e.detail && e.detail.info && e.detail.info.name));
   window.addEventListener("ethereum#initialized", scan);
   const ask = () => window.dispatchEvent(new Event("eip6963:requestProvider"));
   scan(); ask();
